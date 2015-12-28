@@ -1,0 +1,8 @@
+{home_id : "home1id",
+ timestamp_hour: ISODate("2015-10-10T23:00:00.000Z"),
+ device_visibility: {
+     d1: {0:1, 1:1},
+     d2: {0:1, 1:0},
+     d3: {0:0, 1:1},
+ }
+}
