@@ -4,11 +4,8 @@ import os
 import sys
 import datetime
 
-from pymongo import MongoClient
-import json
-
 # to run
-# /home/bigdata/spark-1.5.2-bin-hadoop2.6/bin/pyspark --jars /home/bigdata/smart_home_app/spark-mongo-libs/mongo-hadoop-core-1.4.2.jar,/home/bigdata/smart_home_app/spark-mongo-libs/mongo-java-driver-2.13.2.jar cluster-home-devices.py
+# ~/Downloads/spark-1.5.2-bin-hadoop2.6/bin/pyspark --jars /home/bigdata/smart_home_app/spark-mongo-libs/mongo-hadoop-core-1.4.2.jar,/home/bigdata/smart_home_app/spark-mongo-libs/mongo-java-driver-2.13.2.jar cluster-home-devices.py
 
 # need for pycharm
 def configure_spark(spark_home=None, pyspark_python=None):
@@ -30,6 +27,7 @@ def configure_spark(spark_home=None, pyspark_python=None):
 configure_spark('/home/bigdata/Downloads/spark-1.5.2-bin-hadoop2.6')
 from pyspark import SparkContext, SparkConf
 from pyspark.mllib.clustering import KMeans
+
 
 """
 Returns mango document
@@ -82,30 +80,6 @@ def set_device_visibility_minute_array(s):
     return s
 
 
-def set_device_clusters(s, kmeans_model):
-    # import rpdb; rpdb.set_trace()
-    s['device_clusters'] = {}
-    for (device_num, minute_values) in s['device_visibility_by_minute'].iteritems():
-        s['device_clusters'][str(device_num)] = kmeans_model.predict(minute_values)
-
-    return s
-
-def save_in_mongodb(rdd):
-    with MongoClient('localhost',27017) as db:
-        # db = MongoClient('localhost',27017)
-        dbconn = db.home_automation # should be database name
-        deviceStatsCollection = dbconn['device_clusters'] # collection in DB
-        # import rpdb; rpdb.set_trace()
-        for i in range(0,rdd.count()):
-            json_str = rdd.collect()[i]
-            #json_obj = json.loads(json_str)
-            #import rpdb; rpdb.set_trace()
-            weekday_hour = rdd.collect()[i]["weekday_hour"]
-            deviceStatsCollection.remove({"weekday_hour" : weekday_hour })
-            deviceStatsCollection.insert(json_str)
-
-    # db.close()
-
 if __name__ == "__main__":
     # if len(sys.argv) != 3:
     #     print("Usage: kmeans <file> <k>", file=sys.stderr)
@@ -116,19 +90,20 @@ if __name__ == "__main__":
     conf = SparkConf()
 
     sc = SparkContext(appName="cluster-home-devices")
+    optimal_cost = 10000000
+    optimal_clusters = 0
 
     database_url = 'mongodb://127.0.0.1:27017/home_automation.device_stats'
     rdd = sc.newAPIHadoopRDD(
         inputFormatClass='com.mongodb.hadoop.MongoInputFormat',
         keyClass='org.apache.hadoop.io.Text',
         valueClass='org.apache.hadoop.io.MapWritable',
-        #conf={'mongo.input.uri': database_url, 'mongo.input.split.create_input_splits': 'false'})
-        conf={'mongo.input.uri': database_url})
-    rdd.cache()
+        conf={'mongo.input.uri': database_url, 'mongo.input.split.create_input_splits': 'false'})
+
     # print("Hadoop RDD" + str(rdd.take(1)))
     rdd1 = rdd.map(get_device_stats_mongo_doc)
-    rdd1.cache()  # needed as mongodb connector has bugs.
-    # print("mongo_doc" + str(rdd1.take(1)))
+    rdd1.cache() # needed as mongodb connector has bugs.
+    #print("mongo_doc" + str(rdd1.take(1)))
     rdd2 = rdd1.map(get_weekday_hourly_doc)
     # print("weekday_hourly_doc" + str(rdd2.take(1)))
     rdd3 = rdd2.map(set_device_visibility_minute_array)
@@ -136,81 +111,68 @@ if __name__ == "__main__":
 
     rdd_home_weekly = rdd3;
 
-    for weekday in range(0, 7):  # [0 to 6]
+    for weekday in range(0, 7): # [0 to 6]
         for hour in range(0, 24):
-            current_weekday_hour_string = "weekday" + str(weekday) + "-" + str(hour) + "hour"  # eg., 'weekday2-20hour'
-
-            rdd_to_cluster = rdd_home_weekly.filter(lambda s: s['weekday_hour'] == current_weekday_hour_string)
-            rdd_to_cluster_model = rdd_to_cluster.map(lambda s: s['device_visibility_by_minute'])
-            rdd_to_cluster_model.cache() # need to do for MangoDB Connector bug (exception on multi operations)
-            result_count = rdd_to_cluster_model.count()
-            # print("data count=" + str(result_count) + " " + current_weekday_hour_string)
+            filter_string = "weekday" + str(weekday) + "-" + str(hour) + "hour"  # eg., 'weekday2-20hour'
+            rdd_to_cluster = rdd_home_weekly.filter(lambda s: s['weekday_hour'] == filter_string).map(
+                lambda s: s['device_visibility_by_minute'])
+            result_count = rdd_to_cluster.count()
+            print("data count=" + str(result_count) + " " + filter_string)
             # import rpdb; rpdb.set_trace()
             if result_count == 0:
                 continue
-
-            optimal_cost = 10000000
-            optimal_clusters = 0
-
             # find optimal clusters for this hour interval (weekday-hour)
             for num_clusters in range(2, 20):
+                # lines = sc.textFile(sys.argv[1])
+                # data = lines.map(parseVector)
 
                 k = num_clusters
-                data = rdd_to_cluster_model.flatMap(lambda s: [v for (k, v) in s.iteritems()])
+                # import rpdb; rpdb.set_trace()
+                # data = rdd_to_cluster.filter(lambda s: s['timestamp_hour'] == 'weekday2-20hour').map(
+                #    lambda s: s['device_visibility_by_minute']).collect()
+                # rdd_to_cluster.map(lambda s: s['device_visibility_by_minute']).map( lambda s: [ (k,v) for (k,v)  in s.iteritems()] ).collect()
+                # print (data)
+                # works w/ bugs:
+                # [[0, 0, 0, 0, 0, 0, 0, u'1', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, u'1', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+                # rdd_t= rdd_to_cluster.map(lambda s: s['device_visibility_by_minute']).flatMap( lambda s:  [v for (k,v)  in s.iteritems()] )
+                # KMeans.train(rdd_t, k)
+                # import rpdb; rpdb.set_trace()
+                # data = rdd_to_cluster.map(lambda s: s['device_visibility_by_minute']).flatMap(
+                #    lambda s: [value for (key, value) in s.iteritems()])
+                # need flat map
+                #from pyspark.mllib.regression import LabeledPoint
+
+                # Create a labeled point with a positive label and a dense feature vector.
+                # pos = LabeledPoint(1.0, [1.0, 0.0, 3.0])
+
+                # Create a labeled point with a negative label and a sparse feature vector.
+                # neg = LabeledPoint(0.0, SparseVector(3, [0, 2], [1.0, 3.0]))
+                #data = rdd_to_cluster.flatMap(lambda s: [LabeledPoint(int(key), value) for (key, value) in s.iteritems()])
+
+                data = rdd_to_cluster.flatMap(lambda s: [v for (k, v) in s.iteritems()])
+                #data = rdd_to_cluster.flatMap(lambda s: [v for (k, v) in s.iteritems()])
+                # rdd_to_cluster.flatMap( lambda s: [ {k: v} for (k,v)  in s.iteritems()]).collect()
                 data_count = data.count()
-                # print("data count=" + str(data_count) + " " + current_weekday_hour_string)
+                print("data count=" + str(data_count) + " " + filter_string)
                 if data_count == 0:
                     continue
                 # import rpdb; rpdb.set_trace()
                 # print("data to train:" + data)
                 model = KMeans.train(data, k)
                 cost = model.computeCost(data)
-
-                # predict_data = data.take(1)[0]
-                # print("predict cluster number:" + str(model.predict(predict_data)))
-                # print("num_clusters:" + str(num_clusters) + " Total Cost: " + str(cost))
+                #import rpdb; rpdb.set_trace()
+                predict_data = data.take(1)[0]
+                print("predict :" + str(model.predict(predict_data)))
+                print("num_clusters:" + str(num_clusters) + " Total Cost: " + str(cost))
                 # print("Final centers: " + str(model.clusterCenters))
-                # print("predict cluster: " + str(model.predict(data.collect()[0])))  # check cluster of first element
+                print("predict cluster: " + str(model.predict(data.collect()[0])))  # check cluster of first element
                 if cost < 10 and optimal_cost > 100:
                     optimal_cost = cost
                     optimal_clusters = num_clusters
-                    optimal_model = model
                 if cost == 0:
-                    optimal_cost = cost
-                    optimal_clusters = num_clusters
-                    optimal_model = model
                     break
 
-            # import rpdb; rpdb.set_trace()
-            print(current_weekday_hour_string + " optimal_clusters:" + str(optimal_clusters) +
-                  " optimal_cost:" + str(optimal_cost))
-
-
-            # You can pass additional parameters to flatMap/map function:
-            rdd_with_device_clusters = rdd_to_cluster.map(lambda s: set_device_clusters(s, optimal_model))
-            #rdd_with_device_clusters.cache()
-            print(rdd_with_device_clusters.count())
-            save_in_mongodb(rdd_with_device_clusters)
-            # import rpdb; rpdb.set_trace()
-            # Bugs 
-            # Save this RDD as a Hadoop "file".
-            # The path argument is unused; all documents will go to "mongo.output.uri".
-            # rdd_with_device_clusters_values = rdd_with_device_clusters.values()
-            # rdd_with_device_clusters_values.saveAsNewAPIHadoopFile(
-            # # rdd_with_device_clusters.saveAsNewAPIHadoopFile(
-            # #rdd.saveAsNewAPIHadoopFile(
-            #      path='file:///this-is-unused',
-            #      outputFormatClass='com.mongodb.hadoop.MongoOutputFormat',
-            #      keyClass='org.apache.hadoop.io.Text',
-            #      #keyClass='org.apache.hadoop.io.IntWritable',
-            #      valueClass='org.apache.hadoop.io.MapWritable',
-            #      #conf={'mongo.input.uri': database_url, 'mongo.input.split.create_input_splits': 'false'}
-            #      conf={
-            #          'mongo.output.uri': 'mongodb://127.0.0.1:27017/home_automation.device_clusters',
-            #          #'mongo.input.split.create_input_splits': 'false'
-            #      }
-            #  )
-
+                print("optimal_clusters:" + str(optimal_clusters) + " optimal_cost:" + str(optimal_cost))
 
 
     sc.stop()

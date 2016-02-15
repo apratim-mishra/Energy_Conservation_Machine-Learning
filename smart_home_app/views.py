@@ -47,7 +47,10 @@ def smart_home_api(request):
         timestamp_hour = date_obj.replace(year=date_obj.year,
                                           month=date_obj.month, day=date_obj.day,
                                           hour=date_obj.hour, minute=0, second=0, microsecond=0).isoformat()
-        print(timestamp_hour)
+        weekday_hour = "weekday" + str(date_obj.weekday()) + "-" + str(date_obj.hour) + "hour"
+
+        print(timestamp_hour + " weekday_hour:" + weekday_hour)
+
 
         device_visibility = json_obj['device_visibility']
         device_visibility_upsert_set = {}
@@ -58,10 +61,30 @@ def smart_home_api(request):
                 device_minute_value = device_visibility[key][key1]
                 device_visibility_upsert_set[device_minute_key] = device_minute_value
 
-        # print  device_visibility_upsert_set
+        print  device_visibility_upsert_set
         device_stats_collection.update({"home_id": home_id, "timestamp_hour": timestamp_hour},
                                      {"$set": device_visibility_upsert_set},
                                      upsert=True)
+
+        # import pdb; pdb.set_trace() 
+        # import rpdb; rpdb.set_trace()
+        device_clusters_collection = dbconn['device_clusters']  # collection in DB
+        device_custers_obj = device_clusters_collection.find_one({"weekday_hour" : weekday_hour})
+        if device_custers_obj is not None:
+            response_string = {"ok": "true"}
+            # check if the device is on the old training data at the same minute
+            for device in json_obj['device_visibility'].keys():
+                for minute in json_obj['device_visibility'][device].keys():
+
+                    if device in  device_custers_obj['device_visibility_by_minute']:
+                        # import rpdb; rpdb.set_trace()
+                        int_minute = int(minute)
+                        device_minute_value = device_visibility[device][minute]
+                        past_device_minute_value = device_custers_obj['device_visibility_by_minute'][device][int_minute]
+                        if int(device_minute_value) == 1 and past_device_minute_value == 0:
+                            response_string[str(device)] = "switch off"
+
+            return Response(response_string)
 
         return Response({"ok": "true"})
 

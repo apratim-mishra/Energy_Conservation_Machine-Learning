@@ -1,0 +1,858 @@
+
+How to run
+===================
+
+VM: bridged mode so it can see all the devices
+    make sure ifconfig shows proper ip address
+client:-
+  cd ~/smart_home_app/client/
+  python client_home.py 
+
+   Every one minute client sends the following info to the server:-
+
+   {"home_id": "homeid1", "device_visibility": {"192_168_1_118": {"59": "1"}, "192_168_1_1": {"59": "1"}, "192_168_1_104": {"59": "1"}}, "timestamp_hour": "2016-02-14T17:59:00"}
+<Response [200]>
+
+
+  (for simulation: ~/smart_home_app/client/client_simulator.py)
+  
+webserver:
+  cd ~/smart_home_app/
+  python manage.py runserver 0.0.0.0:8000
+
+  logs: 2016-02-07T19:00:00 weekday_hour:weekday6-19hour
+[08/Feb/2016 03:42:05] "POST /smart_home_app/ HTTP/1.1" 200 13
+  2016-02-14T17:00:00 weekday_hour:weekday6-17hour
+ [15/Feb/2016 01:21:54] "POST /smart_home_app/ HTTP/1.1" 200 13
+
+  views.py appends the minute data to device_stats collection:
+
+> db.device_stats.find().sort({"timestamp_hour":-1})
+{ "_id" : ObjectId("56c1313c78dcbf2944800917"), "home_id" : "homeid1", "timestamp_hour" : "2016-02-14T18:00:00", "device_visibility" : { "192_168_1_1" : { "0" : "1", "1" : "1", "2" : "1", "3" : "1" }, "192_168_1_104" : { "0" : "1", "1" : "1", "2" : "1", "3" : "1" }, "192_168_1_147" : { "0" : "1", "1" : "1", "2" : "1", "3" : "1" }, "192_168_1_118" : { "1" : "1", "2" : "1", "3" : "1" }, "192_168_1_145" : { "1" : "1", "2" : "1", "3" : "1" } } }
+
+
+mongo:-
+     mongo
+     > use home_automation
+     switched to db home_automation
+     > show collections
+      device_clusters
+      device_stats
+
+learning / services:-
+cd /home/bigdata/smart_home_app/services
+/home/bigdata/spark-1.5.2-bin-hadoop2.6/bin/pyspark --jars /home/bigdata/smart_home_app/spark-mongo-libs/mongo-hadoop-core-1.4.2.jar,/home/bigdata/smart_home_app/spark-mongo-libs/mongo-java-driver-2.13.2.jar cluster-home-devices.py
+
+  Sample: 
+     weekday0-0hour optimal_clusters:4 optimal_cost:0.0
+      ..
+      weekday3-16hour optimal_clusters:6 optimal_cost:0.0
+      ..
+      weekday6-23hour optimal_clusters:6 optimal_cost:0.0
+
+ takes device_stats and applies map-reduce and inserts in device_clusters. Also applies Kmeans to derive cluster numbering. "device_clusters" : { "192_168_1_118" : 0, "192_168_1_1" : 6, "192_168_1_104" : 6, "192_168_1_147" : 6, "192_168_1_145" : 0 }
+
+
+  > db.device_clusters.find().sort({"timestamp_hour":-1})
+{ "_id" : { "timeSecond" : 1455501628, "timestamp" : 1455501628, "__class__" : "org.bson.types.ObjectId", "machine" : 2027732777, "time" : NumberLong("1455501628000"), "date" : ISODate("2016-02-14T18:00:28Z"), "new" : false, "inc" : 1149241623 }, "device_visibility_by_minute" : { "192_168_1_118" : [ 0, "1", "1", "1", "1", "1", "1", "1", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ], "192_168_1_1" : [ "1", "1", "1", "1", "1", "1", "1", "1", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ], "192_168_1_104" : [ "1", "1", "1", "1", "1", "1", "1", "1", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ], "192_168_1_147" : [ "1", "1", "1", "1", "1", "1", "1", "1", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ], "192_168_1_145" : [ 0, "1", "1", "1", "1", "1", "1", "1", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ] }, "home_id" : "homeid1", "device_clusters" : { "192_168_1_118" : 0, "192_168_1_1" : 6, "192_168_1_104" : 6, "192_168_1_147" : 6, "192_168_1_145" : 0 }, "device_visibility" : { "192_168_1_118" : { "1" : "1", "3" : "1", "2" : "1", "5" : "1", "4" : "1", "7" : "1", "6" : "1" }, "192_168_1_1" : { "1" : "1", "0" : "1", "3" : "1", "2" : "1", "5" : "1", "4" : "1", "7" : "1", "6" : "1" }, "192_168_1_104" : { "1" : "1", "0" : "1", "3" : "1", "2" : "1", "5" : "1", "4" : "1", "7" : "1", "6" : "1" }, "192_168_1_147" : { "1" : "1", "0" : "1", "3" : "1", "2" : "1", "5" : "1", "4" : "1", "7" : "1", "6" : "1" }, "192_168_1_145" : { "1" : "1", "3" : "1", "2" : "1", "5" : "1", "4" : "1", "7" : "1", "6" : "1" } }, "weekday_hour" : "weekday6-18hour", "timestamp_hour" : "2016-02-14T18:00:00" }
+
+runtime:-
+  the web request will send switch off message as part of json:-
+  ~/smart_home_app/smart_home_app/views.py
+  logic: 
+      we get input data (device_visibility).
+      check device_clusters collections for the corresponding weekday_hour.
+      for each device data in the input data, for each minute
+       
+
+password
+===========
+sudo password: 1234567890
+
+Install
+===============
+sudo apt-get autoremove python
+sudo apt-get remove  python-django
+
+sudo apt-get install python-pip
+##sudo apt-get install  python-django
+sudo pip install --upgrade Django==1.8.3 
+#sudo pip install Django==1.8.3 # https://www.djangoproject.com/download/
+
+#sudo apt-get install -y mongodb
+#sudo pip install -U mongo
+
+sudo pip install djangorestframework
+sudo apt-get install build-essential python-dev
+
+#pip  install pymongo
+
+cd;/usr/local/bin/django-admin  startproject restaurantapp
+
+GOOD follow: http://johnnyprogrammer.blogspot.in/2013/08/creating-rest-service-with-django-and.html
+~/restaurantapp/restaurantapp/settings.py
+
+
+
+
+Run the webserver
+cd ~/restaurantapp/
+python manage.py runserver 0.0.0.0:8000
+
+http://52.10.60.239:8000/restaurants/ <-- carefull public ip changes.
+
+post form url encoded:
+bash-3.2$ curl "http://52.10.60.239:8000/restaurants/?" -d "id=id1&name=name1&address=address1"
+{"ok":"true"}
+
+curl http://52.24.173.123:8000/restaurants/
+curl http://52.24.173.123:8000/restaurants/
+[{"id":"55c6a476b77cb30b27f76679","name":"name1","address":"address1"},{"id":"55c6be15b77cb30c231648e8","name":"name2","address":"address2"},{"id":"55c6be2bb77cb30c231648e9","name":"name3","address":"address3"}]ubuntu@ip-172-31-33-227:~/restaurantapp$ 
+
+mongo
+------
+install https://www.digitalocean.com/community/tutorials/how-to-install-mongodb-on-ubuntu-14-04
+
+ubuntu@ip-172-31-33-227:~$ mongo
+MongoDB shell version: 2.4.9
+connecting to: test
+
+
+>  show dbs
+local        0.078GB
+restaurants  0.203GB
+> 
+
+
+> use home_automation
+switched to db home_automation
+
+> show collections
+device_stats
+system.indexes
+> 
+
+> db.device_stats.insert (  {home_id : "home1id",
+		       	  timestamp_hour: ISODate("2015-10-10T23:00:00.000Z"),
+			  device_visibility: {
+			    d1: {0:1, 1:1},
+			    d2: {0:1, 1:0},
+			    d3: {0:0, 1:1},
+			  }
+		       	   }  
+		)
+
+... ... ... ... ... ... ... ... WriteResult({ "nInserted" : 1 })
+> > 
+
+>  db.device_stats.find()
+{ "_id" : ObjectId("55e21e7f7eee7eecb40245cf"), "home_id" : "home1id", "timestamp_hour" : ISODate("2015-10-10T23:00:00Z"), "device_visibility" : { "d1" : { "0" : 1, "1" : 1 }, "d2" : { "0" : 1, "1" : 0 }, "d3" : { "0" : 0, "1" : 1 } } }
+> 
+
+
+>  db.device_stats.find().pretty()
+{
+	"_id" : ObjectId("55e21e7f7eee7eecb40245cf"),
+	"home_id" : "home1id",
+	"timestamp_hour" : ISODate("2015-10-10T23:00:00Z"),
+	"device_visibility" : {
+		"d1" : {
+			"0" : 1,
+			"1" : 1
+		},
+		"d2" : {
+			"0" : 1,
+			"1" : 0
+		},
+		"d3" : {
+			"0" : 0,
+			"1" : 1
+		}
+	}
+}
+
+>  db.device_stats.update (
+    {"home_id" : "home1id",
+    "timestamp_hour" : ISODate("2015-10-10T23:00:00Z"),
+    },
+    {$set: {"device_visibility.d1.2":1} }
+   )
+... ... ... ... ... WriteResult({ "nMatched" : 1, "nUpserted" : 0, "nModified" : 1 })
+>  
+
+
+>  db.device_stats.update (
+    {"home_id" : "home1id",
+    "timestamp_hour" : ISODate("2015-10-10T23:00:00Z"),
+    },
+    {$set: {"device_visibility.d1.2":1, "device_visibility.d2.2":0, "device_visibility.d3.2":1, "device_visibility.d4.2":0} } )
+... ... ... ... WriteResult({ "nMatched" : 1, "nUpserted" : 0, "nModified" : 0 })
+
+
+Insert or Update : use upsert flag in update:
+db.device_stats.update (  
+   {"home_id" : "home1id",
+     "timestamp_hour" : ISODate("2015-10-10T20:00:00Z"),
+    },
+    {$set: {"device_visibility.d6.2":1, "device_visibility.d7.2":0, "device_visibility.d.2":1, "device_visibility.d4.2":0} },
+     {upsert:true }
+ )
+
+
+> use restaurants
+switched to db restaurants
+
+> db.restaurants.findOne()
+{
+	"_id" : ObjectId("55c6a476b77cb30b27f76679"),
+	"name" : "name1",
+	"address" : "address1"
+}
+>  
+
+db.restaurants.find()
+{ "_id" : ObjectId("55c6a476b77cb30b27f76679"), "name" : "name1", "address" : "address1" }
+{ "_id" : ObjectId("55c6be15b77cb30c231648e8"), "name" : "name2", "address" : "address2" }
+{ "_id" : ObjectId("55c6be2bb77cb30c231648e9"), "name" : "name3", "address" : "address3" }
+> 
+
+
+> db.restaurants.count()
+3
+
+
+/etc/mongodb.conf change to reduce disk usage
+# Enable journaling, http://www.mongodb.org/display/DOCS/Journaling
+##journal=true
+journal=false
+
+How to start/stop
+#sudo service mongod start
+sudo nohup /usr/bin/mongod --config /etc/mongodb.conf&
+
+how to stop mongodb:-
+
+ubuntu@ip-172-31-33-227:~$ ps -aef | grep mongo
+mongodb    832     1  0 01:07 ?        00:00:12 /usr/bin/mongod --config /etc/mongodb.conf
+
+http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu/
+
+
+sudo  /etc/init.d/mongodb  stop  (did not work)
+
+conf file: /etc/mongodb.conf
+
+log: /var/log/mongodb/mongodb.log
+
+
+spark
+------
+
+#wget http://mirror.reverse.net/pub/apache/spark/spark-1.4.1/spark-1.4.1.tgz 
+#tar zxf spark-1.4.1.tgz 
+
+# prebuilt binary
+wget http://www.motorlogy.com/apache/spark/spark-1.4.1/spark-1.4.1-bin-hadoop2.6.tgz 
+http://www.motorlogy.com/apache/spark/spark-1.4.1/spark-1.4.1-bin-hadoop2.6.tgz 
+tar zxf  spark-1.4.1-bin-hadoop2.6.tgz
+
+
+
+
+sudo add-apt-repository ppa:webupd8team/java
+sudo apt-get update
+sudo apt-get install oracle-java8-installer
+
+install NumPy
+--------------
+used in spark kmeans example
+sudo apt-get install python-numpy python-scipy python-matplotlib ipython ipython-notebook python-pandas python-sympy python-nose
+
+spark kmeans example
+----------------------
+
+ref: http://spark.apache.org/docs/latest/
+http://spark.apache.org/docs/latest/mllib-clustering.html
+
+
+http://stackoverflow.com/questions/30972057/is-the-streaming-k-means-clustering-predefined-in-mllib-library-of-spark-supervi
+K-means (streaming or regular) is a clustering algorithm. Clustering algorithms are by definition unsupervised. That is, you don't know the natural groupings (labels) of your data and you want to automatically group similar entities together.
+
+The term "train" here refers to "learning" the clusters (centroids).
+
+The term "predict" refers to predicting which cluster a new point belongs to.
+
+
+kmeans normal:-
+cd /usr/local/spark-1.4.1-bin-hadoop2.6
+ubuntu@ip-172-31-33-227:~/spark-1.4.1-bin-hadoop2.6$ ./bin/spark-submit examples/src/main/python/mllib/kmeans.py ./data/mllib/kmeans_data.txt 3
+
+
+Kmeans streaming 
+http://spark.apache.org/docs/latest/mllib-clustering.html#streaming-k-means
+~/spark-1.4.1-bin-hadoop2.6/examples/src/main/scala/org/apache/spark/examples/mllib/StreamingKMeansExample.scala
+
+ubuntu@ip-172-31-33-227:~/spark-1.4.1-bin-hadoop2.6$ ./bin/run-example mllib.StreamingKMeansExample
+Usage: StreamingKMeansExample <trainingDir> <testDir> <batchDuration> <numClusters> <numDimensions>
+
+spark kafka 
+--------------
+
+https://databricks.com/blog/2015/07/30/diving-into-spark-streamings-execution-model.html
+
+// Learn model offline
+val model = KMeans.train(dataset, ...)
+
+// Apply model online on stream
+val kafkaStream = KafkaUtils.createDStream(...)
+kafkaStream.map { event => model.predict(featurize(event)) }
+
+
+spark controllering output  log info
+-----------------------------------
+
+ubuntu@ip-172-31-33-227:~/spark-1.4.1-bin-hadoop2.6$ cp ./conf/log4j.properties.template ./conf/log4j.properties
+
+In the file: change as:
+
+#log4j.rootCategory=INFO, console
+log4j.rootCategory=WARN, console
+
+
+spark 1.5.0 preview
+---------------------
+
+http://people.apache.org/~pwendell/spark-releases/spark-1.5.0-preview-20150812-docs/
+
+Streaming: http://people.apache.org/~pwendell/spark-releases/spark-1.5.0-preview-20150812-docs/api/python/pyspark.mllib.html#module-pyspark.mllib.clustering
+  pyspark.mllib.clustering.StreamingKMeans(k=2, decayFactor=1.0, timeUnit='batches')
+
+Spark mongoDB (complicated did not try) see below:  spark hadoop connector
+---------------------------------------------
+
+Download jar file here:-
+See http://spark-packages.org/package/Stratio/spark-mongodb
+
+cd /home/bigdata/smart_home_app/mongo-hadoop-jars
+wget http://repo1.maven.org/maven2/com/stratio/datasource/spark-mongodb_2.10/0.10.1/spark-mongodb_2.10-0.10.1.jar
+
+
+
+See https://github.com/mongodb/mongo-hadoop/tree/master/spark/src/main/python
+
+git clone https://github.com/mongodb/mongo-hadoop.git
+
+ Go to the pymongo-spark directory of the project and install:
+
+    cd /home/bigdata/smart_home_app/mongo-hadoop/spark/src/main/python
+    python setup.py install
+
+~/Downloads/spark-1.5.2-bin-hadoop2.6/bin/pyspark --jars /home/bigdata/smart_home_app/mongo-hadoop-jars/spark-mongodb_2.10-0.10.1.jar
+
+>>> import pymongo_spark
+>>> pymongo_spark.activate()
+>>> mongo_rdd = sc.mongoRDD('mongodb://127.0.0.1:27017/home_automation.device_stats')
+Traceback (most recent call last):
+
+You'll also need to put mongo-hadoop-spark.jar (see above for instructions on how to obtain this) somewhere on Spark's CLASSPATH prior to using this package.
+
+Usage
+
+pymongo-spark works by monkey-patching PySpark's RDD and SparkContext classes. All you need to do is call the activate() function in pymongo-spark:
+
+import pymongo_spark
+pymongo_spark.activate()
+
+# You are now ready to use BSON and MongoDB with PySpark.
+
+Make sure to set the appropriate options to put mongo-hadoop-spark.jar on Spark's CLASSPATH. For example:
+
+bin/pyspark --jars mongo-hadoop-spark.jar \
+            --driver-class-path mongo-hadoop-spark.jar
+
+You might also need to add pymongo-spark and/or PyMongo to Spark's PYTHONPATH explicitly:
+
+bin/pyspark --py-files /path/to/pymongo_spark.py,/path/to/pymongo.egg
+
+Examples
+Read from MongoDB
+
+>>> mongo_rdd = sc.mongoRDD('mongodb://localhost:27017/db.collection')
+>>> print(mongo_rdd.first())
+{u'_id': ObjectId('55cd069c6e32abacca39da2b'),
+ u'hello': u'from MongoDB!'}
+
+Write to MongoDB
+
+>>> some_rdd.saveToMongoDB('mongodb://localhost:27017/db.output_collection')
+
+Reading from a BSON File
+
+>>> file_path = 'my_bson_files/dump.bson'
+>>> rdd = sc.BSONFileRDD(file_path)
+>>> rdd.first()
+{u'_id': ObjectId('55cd071e6e32abacca39da2c'),
+ u'hello': u'from BSON!'}
+
+Write to a BSON File
+
+>>> some_rdd.saveToBSON('my_bson_files/output')
+
+
+
+spark hadoop connector
+------------------------
+
+see
+  https://github.com/mongodb/mongo-hadoop/wiki/Spark-Usage
+  https://github.com/mongodb/mongo-hadoop/wiki/Spark-Usage
+
+Obtain the MongoDB Hadoop Connector. You can either build it or download the jars. The releases page also includes instructions for use with Maven and Gradle. For Spark, all you need is the "core" jar.
+
+see https://databricks.com/blog/2015/03/20/using-mongodb-with-spark.html
+
+
+wget https://github.com/mongodb/mongo-hadoop/releases/download/r1.4.0/mongo-hadoop-core-1.4.0.jar
+from http://mongodb.github.io/mongo-java-driver/ download mongo java driver corresponding to the mongodb version:
+  wget https://oss.sonatype.org/content/repositories/releases/org/mongodb/mongo-java-driver/2.13.2/mongo-java-driver-2.13.2.jar
+  #wget https://oss.sonatype.org/content/repositories/releases/org/mongodb/mongodb-driver/3.0.3/mongodb-driver-3.0.3.jar
+
+
+~/spark-1.4.1-bin-hadoop2.6/bin/pyspark
+
+Start spark w/ the connector as follows:-
+
+~/spark-1.4.1-bin-hadoop2.6/bin/pyspark --jars mongo-hadoop-core-1.4.0.jar,mongo-java-driver-2.13.2.jar
+
+
+rdd =  sc.newAPIHadoopRDD(inputFormatClass='com.mongodb.hadoop.MongoInputFormat', keyClass='org.apache.hadoop.io.Text', valueClass='org.apache.hadoop.io.MapWritable', conf={'mongo.input.uri': 'mongodb://127.0.0.1:27017/db.restaurants'})
+
+py4j.protocol.Py4JJavaError: An error occurred while calling z:org.apache.spark.api.python.PythonRDD.newAPIHadoopRDD.
+: java.lang.RuntimeException: Unable to calculate input splits from collection stats: Database [db] not found.
+
+
+WORKS:
+
+
+bigdata@cosmos:~/smart_home_app/spark-mongo-libs$ /usr/local/spark-1.4.1-bin-hadoop2.6/bin/pyspark --jars mongo-hadoop-core-1.4.0.jar,mongo-java-driver-2.13.2.jar
+
+>>> rdd = sc.newAPIHadoopRDD(inputFormatClass='com.mongodb.hadoop.MongoInputFormat', keyClass='org.apache.hadoop.io.Text', valueClass='org.apache.hadoop.io.MapWritable',        conf={'mongo.input.uri': 'mongodb://127.0.0.1:27017/home_automation.device_stats', 'mongo.input.split.create_input_splits':'false'})
+>>> rdd.collect()
+[({u'timeSecond': 1442716814, u'times
+..
+>>> rdd.count()
+1359
+
+>>> def myfunc(s):
+...       s[1]['timestamp_hour'] = '2011-10-10T23:00:00.000Z'
+...       print(s)
+... 
+>>> rdd.map(myfunc).collect()
+({u'timeSecond': 1442716814, 
+>>> def myfunc(s):
+...       s[1]['timestamp_hour'] = '2011-10-10T23:00:00.000Z'
+...       return s
+... 
+>>> rdd.map(myfunc).take(1)
+[({u'timeSecond': 1442716814, u'timestamp': 1442716814, u'__class__': u'org.bson.types.ObjectId', u'machine': -1977956904, u'time': 1442716814000, u'date': datetime.datetime(2015, 9, 19, 19, 40, 14), u'new': False, u'inc': -1241015526}, {u'
+
+
+
+In code
+
+/usr/local/spark-1.4.1-bin-hadoop2.6/bin/pyspark --jars /home/bigdata/smart_home_app/spark-mongo-libs/mongo-hadoop-core-1.4.0.jar,/home/bigdata/smart_home_app/spark-mongo-libs/mongo-java-driver-2.13.2.jar cluster-home-devices.py
+
+or to work in pycharm.
+
+add this in /usr/local/spark-1.4.1-bin-hadoop2.6/conf/spark-defaults.conf
+
+spark.driver.extraClassPath /home/bigdata/smart_home_app/spark-mongo-libs/mongo-hadoop-core-1.4.0.jar:/home/bigdata/smart_home_app/spark-mongo-libs/mongo-java-driver-2.13.2.jar
+
+and in code add this:-
+
+# need for pycharm
+def configure_spark(spark_home=None, pyspark_python=None):
+    spark_home = spark_home or "/path/to/default/spark/home"
+    os.environ['SPARK_HOME'] = spark_home
+
+    # Add the PySpark directories to the Python path:
+    sys.path.insert(1, os.path.join(spark_home, 'python'))
+    sys.path.insert(1, os.path.join(spark_home, 'python', 'pyspark'))
+    sys.path.insert(1, os.path.join(spark_home, 'python', 'build'))
+
+    # If PySpark isn't specified, use currently running Python binary:
+    pyspark_python = pyspark_python or sys.executable
+    os.environ['PYSPARK_PYTHON'] = pyspark_python
+
+
+# import numpy as np
+configure_spark('/usr/local/spark-1.4.1-bin-hadoop2.6')
+from pyspark import SparkContext, SparkConf
+from pyspark.mllib.clustering import KMeans
+
+
+
+
+OLD:
+rdd = sc.newAPIHadoopRDD(inputFormatClass='com.mongodb.hadoop.MongoInputFormat', keyClass='org.apache.hadoop.io.Text', valueClass='org.apache.hadoop.io.MapWritable',        conf={'mongo.input.uri': 'mongodb://127.0.0.1:27017/restaurants.restaurants', 'mongo.input.split.create_input_splits':'false'})
+
+>>> rdd.collect()
+
+[({u'timeSecond': 1439081590, u'timestamp': 1439081590, u'__class__': u'org.bson.types.ObjectId', u'machine': -1216564469, u'time': 1439081590000, u'date': datetime.datetime(2015, 8, 9, 0, 53, 10), u'new': False, u'inc': 670525049}, {u'_id': {u'timeSecond': 1439081590, u'timestamp': 1439081590, u'__class__': u'org.bson.types.ObjectId', u'machine': -1216564469, u'time': 1439081590000, u'date': datetime.datetime(2015, 8, 9, 0, 53, 10), u'new': False, u'inc': 670525049}, u'name': u'name1', u'address': u'address1'}), ({u'timeSecond': 1439088149, u'timestamp': 1439088149, u'__class__': u'org.bson.types.ObjectId', u'machine': -1216564468, u'time': 1439088149000, u'date': datetime.datetime(2015, 8, 9, 2, 42, 29), u'new': False, u'inc': 588663016}, {u'_id': {u'timeSecond': 1439088149, u'timestamp': 1439088149, u'__class__': u'org.bson.types.ObjectId', u'machine': -1216564468, u'time': 1439088149000, u'date': datetime.datetime(2015, 8, 9, 2, 42, 29), u'new': False, u'inc': 588663016}, u'name': u'name2', u'address': u'address2'}), ({u'timeSecond': 1439088171, u'timestamp': 1439088171, u'__class__': u'org.bson.types.ObjectId', u'machine': -1216564468, u'time': 1439088171000, u'date': datetime.datetime(2015, 8, 9, 2, 42, 51), u'new': False, u'inc': 588663017}, {u'_id': {u'timeSecond': 1439088171, u'timestamp': 1439088171, u'__class__': u'org.bson.types.ObjectId', u'machine': -1216564468, u'time': 1439088171000, u'date': datetime.datetime(2015, 8, 9, 2, 42, 51), u'new': False, u'inc': 588663017}, u'name': u'name3', u'address': u'address3'})]
+>>> 
+
+
+
+pymongo
+========
+
+Good http://altons.github.io/python/2013/01/21/gentle-introduction-to-mongodb-using-pymongo/ 
+http://api.mongodb.org/python/current/tutorial.html
+
+
+django-rest 
+==========
+
+GOOD follow: http://johnnyprogrammer.blogspot.in/2013/08/creating-rest-service-with-django-and.html
+See http://www.django-rest-framework.org/tutorial/1-serialization/ click Tutorial menu and see other tutorial
+or http://cisco.safaribooksonline.com/book/web-development/django/9781491946275/4dot-building-a-rest-api/_django_and_rest_html
+or http://cisco.safaribooksonline.com/book/web-development/django/9781785281167/7dot-share-and-share-alike/ch07s02_html 
+
+cd;
+/usr/local/bin/django-admin startproject smart_home_app
+cd smart_home_app;mkdir services # in services add the files needed.
+
+cd smart_home_app
+
+see python manage.py --help 
+see python manage.py startapp --help 
+
+cd smart_home_app
+
+
+Add files and change urls.py
+
+~/smart_home_app$ python manage.py runserver 0.0.0.0:8000
+
+test:
+~/smart_home_app/test$ curl -X POST -d @device_stats_post.json "http://localhost:8000/smart_home_app/?"
+
+~/smart_home_app/test$ cat device_stats_post.json
+{"home_id" : "home1id",
+ "timestamp_hour": "2015-10-10T23:00:00.000Z",
+ "device_visibility": {
+     "d1": {"0":1, "1":1},
+     "d2": {"0":1, "1":0},
+     "d3": {"0":0, "1":1}
+ }
+}
+
+
+~/smart_home_app/test$ curl -X POST -d @device_stats_post.json "http://localhost:8000/smart_home_app/?"
+
+~/smart_home_app/test$ cat device_stats_post.json
+{"home_id" : "home1id",
+ "timestamp_hour": "2015-10-10T23:00:00.000Z",
+ "device_visibility": {
+     "d1": {"0":1, "1":1},
+     "d2": {"0":1, "1":0},
+     "d3": {"0":0, "1":1}
+ }
+}
+
+* kafka
+==========
+
+
+http://kafka.apache.org/documentation.html#quickstart
+
+find scala version
+~/spark-1.4.1-bin-hadoop2.6/bin$ ./spark-shell 
+...
+Using Scala version 2.10.4 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_51)
+...
+
+
+Download corresponding to scala version here:
+  http://kafka.apache.org/downloads.html
+  cd ;wget http://apache.arvixe.com//kafka/0.8.2.1/kafka_2.10-0.8.2.1.tgz 
+  tar zxf kafka_2.10-0.8.2.1.tgz 
+  Start the zoo keeper server:
+    cd /home/ubuntu/kafka_2.10-0.8.2.1
+    bin/zookeeper-server-start.sh config/zookeeper.properties
+
+  Now start the Kafka server:
+   cd /home/ubuntu/kafka_2.10-0.8.2.1
+   bin/kafka-server-start.sh config/server.properties
+   in ~/kafka_2.10-0.8.2.1/bin/kafka-server-start.sh reduce memory usage:
+    if [ "x$KAFKA_HEAP_OPTS" = "x" ]; then
+     #    export KAFKA_HEAP_OPTS="-Xmx1G -Xms1G"
+          export KAFKA_HEAP_OPTS="-Xmx200M -Xms100M"
+    fi
+
+  Create a topic: Let's create a topic named "test" with a single partition and only one replica:
+   cd /home/ubuntu/kafka_2.10-0.8.2.1
+   bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic test
+   Created topic "test".
+   We can now see that topic if we run the list topic command:
+  > bin/kafka-topics.sh --list --zookeeper localhost:2181
+   test
+
+  Step 4: Send some messages
+
+   Kafka comes with a command line client that will take input from a file or from standard input and send it out as messages to the Kafka cluster. By default each line will be sent as a separate message.
+Run the producer and then type a few messages into the console to send to the server.
+
+> bin/kafka-console-producer.sh --broker-list localhost:9092 --topic test 
+This is a message
+This is another message
+Step 5: Start a consumer
+
+Kafka also has a command line consumer that will dump out messages to standard output.
+> bin/kafka-console-consumer.sh --zookeeper localhost:2181 --topic test --from-beginning
+This is a message
+This is another message
+If you have each of the above commands running in a different terminal then you should now be able to type messages into the producer terminal and see them appear in the consumer terminal.
+
+All of the command line tools have additional options; running the command with no arguments will display usage information documenting them in more detail.
+
+  
+
+  
+running spark streaming  
+==========================
+
+nc -lk 9999
+
+# !!!running python examples have problem.!!! does not work
+./bin/spark-submit  examples/src/main/python/streaming/network_wordcount.py localhost 9999
+
+# scala streaming example works.
+bin/run-example org.apache.spark.examples.streaming.NetworkWordCount localhost 9999
+code: ~/spark-1.4.1-bin-hadoop2.6/examples/src/main/scala/org/apache/spark/examples/streaming/NetworkWordCount.scala
+
+running spark streaming example on kafka
+======================================
+
+
+http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22org.apache.spark%22%20AND%20v%3A%221.4.1%22
+
+search string as we are using spark 1.4.1
+g:"org.apache.spark" AND v:"1.4.1"
+
+
+org.apache.spark     spark-streaming-kafka-assembly_2.10	1.4.1	08-Jul-2015	pom  jar  sources.jar  test-sources.jar  tests.jar  
+
+wget -O spark-streaming-kafka-assembly_2.10-1.4.1.jar http://search.maven.org/remotecontent?filepath=org/apache/spark/spark-streaming-kafka-assembly_2.10/1.4.1/spark-streaming-kafka-assembly_2.10-1.4.1.jar 
+
+
+Start zookeeper and kafka.
+
+# PYTHON Example does not work
+cd ~/spark-1.4.1-bin-hadoop2.6/
+./bin/spark-submit --jars /home/ubuntu/kafka_2.10-0.8.2.1/spark-streaming-kafka-assembly_2.10-1.4.1.jar  examples/src/main/python/streaming/kafka_wordcount.py localhost:2181 test 
+
+
+# scala works
+cd /home/ubuntu/spark-1.4.1-bin-hadoop2.6
+bin/run-example org.apache.spark.examples.streaming.KafkaWordCount localhost:2181 group test 1
+
+send messages:
+cd ~/kafka_2.10-0.8.2.1
+ubuntu@ip-172-31-33-227:~/kafka_2.10-0.8.2.1$ bin/kafka-console-producer.sh --broker-list localhost:9092 --topic test 
+[2015-09-06 02:32:10,601] WARN Property topic is not valid (kafka.utils.VerifiableProperties)
+gg  gggg
+hgfhffhfghg
+hello world
+
+kafka python integration
+=======================
+
+#wget https://github.com/Parsely/pykafka/archive/master.zip
+
+#sudo pip install pykafka
+#sudo pip install --upgrade pykafka
+
+#package name is pykafka
+#  ubuntu@ip-172-31-33-227:~$ ls -lt  /usr/local/lib/python2.7/dist-packages/pykafka/client*
+#  -rw-r--r-- 1 root staff 3866 Sep  6 23:35 /usr/local/lib/python2.7/dist-packages/pykafka/client.pyc
+#  -rw-r--r-- 1 root staff 3506 Sep  6 23:35 /usr/local/lib/python2.7/dist-packages/pykafka/client.py
+
+docs: http://kafka-python.readthedocs.org/en/latest/install.html
+sudo pip install kafka-python
+
+example: https://github.com/mumrah/kafka-python/blob/master/example.py
+wget https://raw.githubusercontent.com/mumrah/kafka-python/master/example.py
+
+    cd kafka_2.10-0.8.2.1
+   bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic my-topic
+
+  cd
+  python example.py
+  # above sends and receives messages to my-topic
+
+
+
+
+
+eclipse
+=============
+cd eclipse
+./eclipse
+
+
+emacs
+============
+start GUI version as keys work well ( not export DISPLAY=)
+
+pycharm
+==========
+just run: charm
+
+also run configuration select only python2.7
+
+
+
+cluster kmeans
+===============
+
+/home/bigdata/smart_home_app/services
+bigdata@cosmos:~/smart_home_app/services$ /usr/local/spark-1.4.1-bin-hadoop2.6/bin/spark-submit  cluster-devices.py home1-data.txt 
+
+
+import pdb; pdb.set_trace()
+
+
+
+rpdb
+===========
+VERY GOOD
+   see https://pypi.python.org/pypi/rpdb/
+   for client debug:
+
+    in code add:
+     import rpdb; rpdb.set_trace()
+    good break point /opt/stack/python-gbpclient/gbpclient/v2_0/client.py::retry_request
+     cd /home/openstack
+     mkdir rpdb
+     cd rpdb
+     wget https://pypi.python.org/packages/source/r/rpdb/rpdb-0.1.5.tar.gz
+     tar zxf rpdb-0.1.5.tar.gz
+     cd ..
+     export PYTHONPATH=/home/bigdata/smart_home_app/rpdb/rpdb-0.1.5/
+     tox -e venv -- python  -m testtools.run
+
+     #if you do below one, it will break for a short time only
+     #tox -e pep8,py27
+   
+   pdb is running on 127.0.0.1:4444
+  
+   emacs M-x pdb
+   nc 127.0.0.1 4444
+
+
+
+how it works
+==============
+
+
+(Pdb) print rdd1.take(1)
+[{u'home_id': u'homeid1', u'device_visibility': {u'9': {u'11': u'1', u'10': u'1', u'13': u'1', u'12': u'1'}, u'4': {u'11': u'1', u'10': u'1', u'13': u'1', u'12': u'1'}}, u'_id': {u'timeSecond': 1451177295, u'timestamp': 1451177295, u'__class__': u'org.bson.types.ObjectId', u'machine': 2027732777, u'time': 1451177295000, u'date': datetime.datetime(2015, 12, 26, 16, 48, 15), u'new': False, u'inc': 1149240855}, u'timestamp_hour': u'2015-12-26T09:13:00'}]
+(Pdb) print rdd2.take(1)
+[{u'home_id': u'homeid1', u'device_visibility': {u'9': {u'11': u'1', u'10': u'1', u'13': u'1', u'12': u'1'}, u'4': {u'11': u'1', u'10': u'1', u'13': u'1', u'12': u'1'}}, u'_id': {u'timeSecond': 1451177295, u'timestamp': 1451177295, u'__class__': u'org.bson.types.ObjectId', u'machine': 2027732777, u'time': 1451177295000, u'date': datetime.datetime(2015, 12, 26, 16, 48, 15), u'new': False, u'inc': 1149240855}, u'timestamp_hour': 'weekday5-9hour'}]
+(Pdb) print rdd3.take(1)
+[{u'home_id': u'homeid1', u'device_visibility': {u'9': {u'11': u'1', u'10': u'1', u'13': u'1', u'12': u'1'}, u'4': {u'11': u'1', u'10': u'1', u'13': u'1', u'12': u'1'}}, u'_id': {u'timeSecond': 1451177295, u'timestamp': 1451177295, u'__class__': u'org.bson.types.ObjectId', u'machine': 2027732777, u'time': 1451177295000, u'date': datetime.datetime(2015, 12, 26, 16, 48, 15), u'new': False, u'inc': 1149240855}, u'timestamp_hour': 'weekday5-9hour', 'device_visibility_by_minute': {u'9': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, u'1', u'1', u'1', u'1', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], u'4': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, u'1', u'1', u'1', u'1', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}}]
+(Pdb) p rdd3.map(lambda s: s['device_visibility_by_minute']).take(1)
+[{u'9': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, u'1', u'1', u'1', u'1', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], u'4': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, u'1', u'1', u'1', u'1', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}]
+(Pdb) dir( rdd3.map(lambda s: s['device_visibility_by_minute']))
+['__add__', '__class__', '__delattr__', '__dict__', '__doc__', '__format__', '__getattribute__', '__getnewargs__', '__hash__', '__init__', '__module__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__', '__str__', '__subclasshook__', '__weakref__', '_bypass_serializer', '_can_spill', '_computeFractionForSampleSize', '_defaultReducePartitions', '_id', '_is_pipelinable', '_jrdd', '_jrdd_deserializer', '_jrdd_val', '_memory_limit', '_pickled', '_prev_jrdd', '_prev_jrdd_deserializer', '_reserialize', '_to_java_object_rdd', 'aggregate', 'aggregateByKey', 'cache', 'cartesian', 'checkpoint', 'coalesce', 'cogroup', 'collect', 'collectAsMap', 'combineByKey', 'context', 'count', 'countApprox', 'countApproxDistinct', 'countByKey', 'countByValue', 'ctx', 'distinct', 'filter', 'first', 'flatMap', 'flatMapValues', 'fold', 'foldByKey', 'foreach', 'foreachPartition', 'fullOuterJoin', 'func', 'getCheckpointFile', 'getNumPartitions', 'getStorageLevel', 'glom', 'groupBy', 'groupByKey', 'groupWith', 'histogram', 'id', 'intersection', 'isCheckpointed', 'isEmpty', 'is_cached', 'is_checkpointed', 'join', 'keyBy', 'keys', 'leftOuterJoin', 'lookup', 'map', 'mapPartitions', 'mapPartitionsWithIndex', 'mapPartitionsWithSplit', 'mapValues', 'max', 'mean', 'meanApprox', 'min', 'name', 'partitionBy', 'partitioner', 'persist', 'pipe', 'preservesPartitioning', 'prev', 'randomSplit', 'reduce', 'reduceByKey', 'reduceByKeyLocally', 'repartition', 'repartitionAndSortWithinPartitions', 'rightOuterJoin', 'sample', 'sampleByKey', 'sampleStdev', 'sampleVariance', 'saveAsHadoopDataset', 'saveAsHadoopFile', 'saveAsNewAPIHadoopDataset', 'saveAsNewAPIHadoopFile', 'saveAsPickleFile', 'saveAsSequenceFile', 'saveAsTextFile', 'setName', 'sortBy', 'sortByKey', 'stats', 'stdev', 'subtract', 'subtractByKey', 'sum', 'sumApprox', 'take', 'takeOrdered', 'takeSample', 'toDebugString', 'toLocalIterator', 'top', 'treeAggregate', 'treeReduce', 'union', 'unpersist', 'values', 'variance', 'zip', 'zipWithIndex', 'zipWithUniqueId']
+(Pdb) p rdd3.map(lambda s: s['device_visibility_by_minute'])
+PythonRDD[318] at RDD at PythonRDD.scala:43
+(Pdb) p rdd3.map(lambda s: s['device_visibility_by_minute']).collect()
+[{u'9': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, u'1', u'1', u'1', u'1', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], u'4': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, u'1', u'1', u'1', u'1', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}, {u'1': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, u'1', u'1', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], u'8': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, u'1', u'1', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}]
+(Pdb) 
+===========================================
+
+pretty print RDD
+
+(pdb) import pprint
+(Pdb) pprint.pprint(rdd1.collect())
+[{u'_id': {u'__class__': u'org.bson.types.ObjectId',
+           u'date': datetime.datetime(2015, 12, 26, 16, 48, 15),
+           u'inc': 1149240855,
+           u'machine': 2027732777,
+           u'new': False,
+           u'time': 1451177295000,
+           u'timeSecond': 1451177295,
+           u'timestamp': 1451177295},
+  u'device_visibility': {u'4': {u'10': u'1',
+                                u'11': u'1',
+                                u'12': u'1',
+                                u'13': u'1'},
+                         u'9': {u'10': u'1',
+                                u'11': u'1',
+                                u'12': u'1',
+                                u'13': u'1'}},
+  u'home_id': u'homeid1',
+  u'timestamp_hour': u'2015-12-26T09:13:00'},
+
+===================================
+
+
+github
+
+
+git clone https://github.com/tejasvikothapalli/Energy_Conservation_Machine-Learning.git
+
+echo "# Energy_Conservation_Machine-Learning" >> README.md
+git init
+#git add README.md
+git add .
+git commit -m "first commit"
+git remote add origin https://github.com/tejasvikothapalli/Energy_Conservation_Machine-Learning.git
+git push -u origin master
+
+to pull changes
+-------------
+git pull
+
+
+
+client
+===========
+
+To simulate data:
+/home/bigdata/smart_home_app/client
+python client_simulator.py
+
+bigdata@cosmos:~/smart_home_app/client$ curl -X POST -d @device_stats_post.json "http://localhost:8000/smart_home_app/?"
+{"1":"switch off","2":"switch off","ok":"true"}
+
+docker
+=============
+
+http://stackoverflow.com/questions/33391840/getting-spark-python-and-mongodb-to-work-together
+
+
+nmap
+============
+
+
+# in ubuntu: sudo apt-get install nmap
+#           sudo python -m easy_install python-nmap
+#
+# in mac: sudo easy_install python-nmap
+# python client_home1.py 
+# ['192.168.1.1', '192.168.1.104', '192.168.1.106', '192.168.1.107', '192.168.1.109', '192.168.1.118', '192.168.1.119', '192.168.1.145', '192.168.1.146']
+
+
+import nmap
+nm = nmap.PortScanner()
+
+# hostlist = ' '.join(nm.all_hosts())
+# nm.scan(hosts=hostlist, arguments='-n -sP -PE')
+# print hostlist
+
+hostlist = "192.168.1.1/24"
+nm.scan(hosts=hostlist, arguments='-sP')
+print nm.all_hosts()
