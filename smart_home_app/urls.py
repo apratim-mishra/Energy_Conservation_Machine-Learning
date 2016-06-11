@@ -16,7 +16,10 @@ Including another URLconf
 from django.conf.urls import include, url
 from django.contrib import admin
 
+from smart_home_app import views
+
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
-    url(r'^smart_home_app/$', 'smart_home_app.views.smart_home_api', name='smart_home_app'),
+   # url(r'^smart_home_app/$', 'smart_home_app.views.smart_home_api', name='smart_home_app'),
+    url(r'^smart_home_app/$', views.smart_home_api),
 ]

@@ -122,8 +122,8 @@ if __name__ == "__main__":
         inputFormatClass='com.mongodb.hadoop.MongoInputFormat',
         keyClass='org.apache.hadoop.io.Text',
         valueClass='org.apache.hadoop.io.MapWritable',
-        #conf={'mongo.input.uri': database_url, 'mongo.input.split.create_input_splits': 'false'})
-        conf={'mongo.input.uri': database_url})
+        conf={'mongo.input.uri': database_url, 'mongo.input.split.create_input_splits': 'false'})
+        #conf={'mongo.input.uri': database_url})
     rdd.cache()
     # print("Hadoop RDD" + str(rdd.take(1)))
     rdd1 = rdd.map(get_device_stats_mongo_doc)

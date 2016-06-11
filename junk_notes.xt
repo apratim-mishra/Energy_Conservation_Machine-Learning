@@ -1,4 +1,36 @@
 
+Install
+---------
+Ubuntu 14.04
+git clone 
+in home directory wget http://apache.cs.utah.edu/spark/spark-1.5.2/spark-1.5.2-bin-hadoop2.6.tgz
+  cp ./conf/log4j.properties.template ./conf/log4j.properties
+  In the file: change as:
+  #log4j.rootCategory=INFO, console
+  log4j.rootCategory=WARN, console
+
+Install Java:-
+sudo add-apt-repository ppa:webupd8team/java
+sudo apt-get update
+sudo apt-get install oracle-java8-installer
+java -version
+  java version "1.8.0_91"
+
+
+sudo apt-get install python-setuptools
+sudo easy_install pymongo
+( installed pymongo-3.2.2)
+sudo apt-get install python-numpy
+
+sudo easy_install django
+sudo easy_install djangorestframework
+
+client:
+ in ubuntu: sudo apt-get install nmap
+           sudo python -m easy_install python-nmap
+
+in mac: sudo easy_install python-nmap
+
 How to run
 ===================
 
@@ -40,6 +72,10 @@ mongo:-
       device_stats
 
 learning / services:-
+
+~/spark-1.5.2-bin-hadoop2.6/bin/pyspark --jars /home/ubuntu/Energy_Conservation_Machine-Learning/spark-mongo-libs/mongo-hadoop-core-1.4.2.jar,/home/ubuntu/Energy_Conservation_Machine-Learning/spark-mongo-libs/mongo-java-driver-2.13.2.jar ~/Energy_Conservation_Machine-Learning/services/cluster-home-devices.py
+
+
 cd /home/bigdata/smart_home_app/services
 /home/bigdata/spark-1.5.2-bin-hadoop2.6/bin/pyspark --jars /home/bigdata/smart_home_app/spark-mongo-libs/mongo-hadoop-core-1.4.2.jar,/home/bigdata/smart_home_app/spark-mongo-libs/mongo-java-driver-2.13.2.jar cluster-home-devices.py
 
