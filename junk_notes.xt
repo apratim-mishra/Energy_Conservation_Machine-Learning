@@ -25,7 +25,8 @@ sudo apt-get install python-numpy
 sudo easy_install django
 sudo easy_install djangorestframework
 
-client:
+client
+:
  in ubuntu: sudo apt-get install nmap
            sudo python -m easy_install python-nmap
 
@@ -50,7 +51,9 @@ client:-
   
 webserver:
   cd ~/smart_home_app/
-  python manage.py runserver 0.0.0.0:8000
+  #python manage.py runserver 0.0.0.0:8000
+
+  nohup python manage.py runserver 0.0.0.0:8043&
 
   logs: 2016-02-07T19:00:00 weekday_hour:weekday6-19hour
 [08/Feb/2016 03:42:05] "POST /smart_home_app/ HTTP/1.1" 200 13
@@ -851,6 +854,12 @@ git push -u origin master
 to pull changes
 -------------
 git pull
+
+to Push changes
+-----------------
+git add .
+git commit -m "first commit"
+git push
 
 
 

@@ -1,6 +1,0 @@
-[20/Sep/2015 02:32:47] "GET / HTTP/1.1" 404 2051
-[20/Sep/2015 02:32:47] "GET /favicon.ico HTTP/1.1" 404 2084
-[20/Sep/2015 02:33:05] "GET /smart_home_app HTTP/1.1" 301 0
-[20/Sep/2015 02:33:06] "GET /smart_home_app/ HTTP/1.1" 500 87187
-[20/Sep/2015 02:40:14] "POST /smart_home_app/? HTTP/1.1" 200 13
-[20/Sep/2015 02:44:34] "POST /smart_home_app/? HTTP/1.1" 200 13
