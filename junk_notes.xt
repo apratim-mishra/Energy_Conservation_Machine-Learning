@@ -25,6 +25,11 @@ sudo apt-get install python-numpy
 sudo easy_install django
 sudo easy_install djangorestframework
 
+sublime:-
+  Doesn't work if no no graphics
+  sudo add-apt-repository -y ppa:webupd8team/sublime-text-2
+  sudo apt-get install sublime-text
+
 client
 :
  in ubuntu: sudo apt-get install nmap
@@ -32,15 +37,20 @@ client
 
 in mac: sudo easy_install python-nmap
 
+in django settings.py
+ALLOWED_HOSTS = ['PUT IP ADDRESS'] 
+
 How to run
 ===================
 
 VM: bridged mode so it can see all the devices
     make sure ifconfig shows proper ip address
 client:-
-  cd ~/smart_home_app/client/
-  python client_home.py 
 
+  for gui : site /static/test.html
+  cd ~/smart_home_app/client/
+  #python client_home.py 
+   nohup python client_home.py > /dev/null 2>&1 &
    Every one minute client sends the following info to the server:-
 
    {"home_id": "homeid1", "device_visibility": {"192_168_1_118": {"59": "1"}, "192_168_1_1": {"59": "1"}, "192_168_1_104": {"59": "1"}}, "timestamp_hour": "2016-02-14T17:59:00"}
@@ -50,10 +60,11 @@ client:-
   (for simulation: ~/smart_home_app/client/client_simulator.py)
   
 webserver:
-  cd ~/smart_home_app/
+  cd ~/Energy_Conservation_Machine-Learning
   #python manage.py runserver 0.0.0.0:8000
-
-  nohup python manage.py runserver 0.0.0.0:8043&
+  #nohup python manage.py runserver 0.0.0.0:8043&
+  nohup python manage.py runserver 0.0.0.0:8043 > /dev/null 2>&1 &
+  
 
   logs: 2016-02-07T19:00:00 weekday_hour:weekday6-19hour
 [08/Feb/2016 03:42:05] "POST /smart_home_app/ HTTP/1.1" 200 13
@@ -73,6 +84,9 @@ mongo:-
      > show collections
       device_clusters
       device_stats
+     > db.device_stats.find()
+     > db.device_stats.find().count()
+     > db.device_stats.find().pretty()
 
 learning / services:-
 
@@ -210,6 +224,17 @@ system.indexes
 	}
 }
 
+> db.device_stats.update ( {"home_id": "test", "timestamp_hour": "weekday6-16hour"}, {"$set": {'device_visibility.192_168_1_1.58': '1', 'device_visibility.192_168_1_124.58': '1', 'device_visibility.192_168_1_118.58': '1', 'device_visibility.192_168_1_102.58': '1'}}, {upsert:true})
+WriteResult({ "nMatched" : 1, "nUpserted" : 0, "nModified" : 1 })
+db.device_stats.update ( {"home_id": "test", "timestamp_hour": "weekday6-16hour"}, {"$set": {'device_visibility.192_168_1_1.58': '1'}}, {upsert:true})
+
+
+WriteResult({
+	"nMatched" : 0,
+	"nUpserted" : 1,
+	"nModified" : 0,
+	"_id" : ObjectId("575dfb77bb2201f88c3fdbcc")
+})
 >  db.device_stats.update (
     {"home_id" : "home1id",
     "timestamp_hour" : ISODate("2015-10-10T23:00:00Z"),
@@ -870,8 +895,15 @@ To simulate data:
 /home/bigdata/smart_home_app/client
 python client_simulator.py
 
+
+You can View API in Browser: http://54.201.150.12:8043/smart_home_app/? GOOD
+
+curl  "http://54.201.150.12:8043/smart_home_app/"
+{"ok":"true"}
+
 bigdata@cosmos:~/smart_home_app/client$ curl -X POST -d @device_stats_post.json "http://localhost:8000/smart_home_app/?"
 {"1":"switch off","2":"switch off","ok":"true"}
+
 
 docker
 =============

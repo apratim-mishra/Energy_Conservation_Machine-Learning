@@ -13,13 +13,28 @@ Including another URLconf
     1. Add an import:  from blog import urls as blog_urls
     2. Add a URL to urlpatterns:  url(r'^blog/', include(blog_urls))
 """
+from django.views.generic.base import TemplateView
 from django.conf.urls import include, url
 from django.contrib import admin
 
 from smart_home_app import views
+import os
+from django.conf.urls.static import static
+from django.conf import settings
+
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+TEMPLATE_DIRS = os.path.join(BASE_DIR, 'templates')
 
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
-   # url(r'^smart_home_app/$', 'smart_home_app.views.smart_home_api', name='smart_home_app'),
     url(r'^smart_home_app/$', views.smart_home_api),
 ]
+
+
+# see https://docs.djangoproject.com/en/1.8/howto/static-files/
+# Put files under static directory
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, "static"),
+)
+
+

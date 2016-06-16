@@ -1,0 +1,41 @@
+<html>
+  <head>
+    <!--Load the AJAX API-->
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+    <script type="text/javascript">
+
+   // see https://developers.google.com/chart/interactive/docs/gallery/timeline#a-simple-example
+   // see 
+    google.charts.load('current', {'packages':['timeline']});
+    google.charts.setOnLoadCallback(drawChart);
+      
+    function drawChart() {
+      var jsonData = $.ajax({
+          url: "/smart_home_app/",
+          dataType: "json",
+          async: false
+          }).responseText;
+      
+     var container = document.getElementById('timeline');
+     var chart = new google.visualization.Timeline(container);
+     //var dataTable = new google.visualization.DataTable();
+    
+      // Create our data table out of JSON data loaded from server.
+      //alert(jsonData);
+      var data = new google.visualization.DataTable(jsonData);
+      chart.draw(data);
+      //alert(data.toJSON());
+  
+    // Instantiate and draw our chart, passing in some options.
+     // var chart = new google.visualization.PieChart(document.getElementById('chart_div'));
+     // chart.draw(data, {width: 400, height: 240});
+    }
+
+    </script>
+  </head>
+
+  <body>
+    <div id="timeline" style="height: 1000px;"></div>
+  </body>
+</html>

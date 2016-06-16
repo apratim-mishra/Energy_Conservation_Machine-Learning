@@ -4,9 +4,10 @@ from rest_framework.response import Response
 from pymongo import MongoClient
 import json
 import datetime
+import pymongo
+from django.http import JsonResponse
 
-
-@csrf_exempt
+#@csrf_exempt
 @api_view(['GET', 'POST'])
 def smart_home_api(request):
     # connect to our local mongodb
@@ -14,6 +15,45 @@ def smart_home_api(request):
     # get a connection to our database
     dbconn = db.home_automation  # should be database name
     device_stats_collection = dbconn['device_stats']  # collection in DB
+    #print "HELLO"
+
+    if request.method == 'GET':
+
+# returns data in this format:-
+# {"cols":[{"type":"string","id":"IP_Address"},{"type":"date","id":"Start"},{"type":"date","id":"End"}],"rows":[
+# {"c":[{"v":"192_168_1_107"},{"v":"Date(2016,06,13,00,12,0)"},{"v":"Date(2016,06,13,00,12,0)"}]},
+# {"c":[{"v":"192_168_1_107"},{"v":"Date(2016,06,13,00,28,0)"},{"v":"Date(2016,06,13,00,28,0)"}]},
+# {"c":[{"v":"192_168_1_107"},{"v":"Date(2016,06,13,00,39,0)"},{"v":"Date(2016,06,13,00,39,0)"}]},
+# ]}
+
+        day = "2016-06-13"
+        db = MongoClient('localhost', 27017)
+        dbconn = db.home_automation  # should be database name
+        device_stats_collection = dbconn['device_stats']  # collection in DB
+        cursor = dbconn.device_stats.find({"timestamp_hour": {'$regex': day} }).sort([("timestamp_hour", pymongo.ASCENDING)])
+        #cursor = dbconn.device_stats.find({"timestamp_hour" : "2016-06-10T22:00:00"})
+        output = ""
+        output += '{"cols":[{"type":"string","id":"IP_Address"},{"type":"date","id":"Start"},{"type":"date","id":"End"}], \n "rows":['
+        for document in cursor:
+                devicesList = document['device_visibility']
+                for device in devicesList:
+                        timesON = sorted(devicesList[device])
+                        for time in timesON:
+                                year = document['timestamp_hour'][:4]
+                                month = document['timestamp_hour'][5:-12]
+                                day = document['timestamp_hour'][8:-9]
+                                hour = document['timestamp_hour'][11:-6]
+                                ipRow = '{"v":"' + device + '"}'
+                                startDate = '{"v":"Date('+ year + ',' + month + ',' + day + ',' + hour + ',' + time + ',0)"}'
+                                output += '{"c":['+ ipRow + ',' + startDate + ',' + startDate + ']}, \n'
+        output +=  "]}" 
+        # remove last comma (,). Otherwise json parsing fails.
+        last_occurance = output.rfind(",")
+        output = output[:last_occurance] + "" + output[last_occurance+1:]
+        
+        #print output
+        json_obj = json.loads(output)
+        return JsonResponse(json_obj)
 
     if request.method == 'POST':
         json_str = (request.body.decode('utf-8'))
