@@ -11,6 +11,10 @@
     google.charts.setOnLoadCallback(drawChart);
       
     function drawChart() {
+	//var options = {
+
+		//hAxis: {viewWindow: { min: new Date(2016,0,1), max: new Date(2016,0,8) }}
+	//}
       var jsonData = $.ajax({
           url: "/smart_home_app/",
           dataType: "json",
@@ -36,6 +40,6 @@
   </head>
 
   <body>
-    <div id="timeline" style="height: 1000px;"></div>
+    <div id="timeline" style="height: 2000px;"></div>
   </body>
 </html>

@@ -88,13 +88,16 @@ mongo:-
      > db.device_stats.find().count()
      > db.device_stats.find().pretty()
 
+    db.device_names.insert( {"home_id" : "teja", "192_168_1_107" : "IPhone", "192_168_1_102" : "Tejasvi_Mac", "192_168_1_118" : "chromecast", "192_168_1_137": "ASUS", "192_168_1_124" : "Tejasvi-Cell", "192_168_1_1": "router" , "192_168_1_145": "?", "192_168_1_126" : "Krishna_MAC", "192_168_1_128" : "?"})
+WriteResult({ "nInserted" : 1 })
+
 learning / services:-
 
 ~/spark-1.5.2-bin-hadoop2.6/bin/pyspark --jars /home/ubuntu/Energy_Conservation_Machine-Learning/spark-mongo-libs/mongo-hadoop-core-1.4.2.jar,/home/ubuntu/Energy_Conservation_Machine-Learning/spark-mongo-libs/mongo-java-driver-2.13.2.jar ~/Energy_Conservation_Machine-Learning/services/cluster-home-devices.py
 
 
-cd /home/bigdata/smart_home_app/services
-/home/bigdata/spark-1.5.2-bin-hadoop2.6/bin/pyspark --jars /home/bigdata/smart_home_app/spark-mongo-libs/mongo-hadoop-core-1.4.2.jar,/home/bigdata/smart_home_app/spark-mongo-libs/mongo-java-driver-2.13.2.jar cluster-home-devices.py
+old cd /home/bigdata/smart_home_app/services
+old /home/bigdata/spark-1.5.2-bin-hadoop2.6/bin/pyspark --jars /home/bigdata/smart_home_app/spark-mongo-libs/mongo-hadoop-core-1.4.2.jar,/home/bigdata/smart_home_app/spark-mongo-libs/mongo-java-driver-2.13.2.jar cluster-home-devices.py
 
   Sample: 
      weekday0-0hour optimal_clusters:4 optimal_cost:0.0
@@ -803,7 +806,7 @@ VERY GOOD
      wget https://pypi.python.org/packages/source/r/rpdb/rpdb-0.1.5.tar.gz
      tar zxf rpdb-0.1.5.tar.gz
      cd ..
-     export PYTHONPATH=/home/bigdata/smart_home_app/rpdb/rpdb-0.1.5/
+     export PYTHONPATH=~/Energy_Conservation_Machine-Learning//rpdb/rpdb-0.1.5/
      tox -e venv -- python  -m testtools.run
 
      #if you do below one, it will break for a short time only
@@ -933,3 +936,41 @@ nm = nmap.PortScanner()
 hostlist = "192.168.1.1/24"
 nm.scan(hosts=hostlist, arguments='-sP')
 print nm.all_hosts()
+
+
+
+===========
+
+
+
+ubuntu@ip-172-31-41-212:~/Energy_Conservation_Machine-Learning/smart_home_app$ 
+ubuntu@ip-172-31-41-212:~/Energy_Conservation_Machine-Learning/smart_home_app$ 
+ubuntu@ip-172-31-41-212:~/Energy_Conservation_Machine-Learning/smart_home_app$ 
+ubuntu@ip-172-31-41-212:~/Energy_Conservation_Machine-Learning/smart_home_app$ 
+ubuntu@ip-172-31-41-212:~/Energy_Conservation_Machine-Learning/smart_home_app$ 
+ubuntu@ip-172-31-41-212:~/Energy_Conservation_Machine-Learning/smart_home_app$ python
+Python 2.7.6 (default, Jun 22 2015, 17:58:13) 
+[GCC 4.8.2] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+>>> from pymongo import MongoClient
+>>> dbconn = db.home_automation
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+NameError: name 'db' is not defined
+>>> db = MongoClient('localhost', 27017)
+>>> dbconn = db.home_automation
+>>> device_clusters_collection = dbconn['device_clusters']  # collection in DB
+>>> "weekday_hour" : "weekday0-19hour"
+  File "<stdin>", line 1
+    "weekday_hour" : "weekday0-19hour"
+                   ^
+SyntaxError: invalid syntax
+>>> device_custers_obj = device_clusters_collection.find_one({"weekday_hour" : "weekday0-19hour"})
+>>> print (device_custers_obj)
+{u'weekday_hour': u'weekday0-19hour', u'device_visibility_by_minute': {u'192_168_1_107': [0, 0, 0, 0, 0, 0, 0, u'1', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, u'1', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, u'1', 0, 0, 0, 0, u'1', u'1', u'1', u'1', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, u'1'], u'192_168_1_128': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', 0, u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', 0, u'1', u'1', u'1', u'1', u'1', u'1', u'1'], u'192_168_1_102': [0, u'1', u'1', u'1', u'1', u'1', u'1', u'1', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, u'1'], u'192_168_1_118': [0, u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', 0, u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', 0, u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', 0, u'1', u'1', u'1', u'1', u'1', u'1', u'1'], u'192_168_1_124': [0, 0, u'1', u'1', 0, u'1', u'1', 0, u'1', u'1', u'1', u'1', u'1', u'1', u'1', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, u'1', 0, u'1'], u'192_168_1_137': [0, u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', 0, u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', 0, u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', 0, u'1', u'1', u'1', u'1', u'1', u'1', u'1'], u'192_168_1_1': [0, u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', 0, u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', 0, u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', u'1', 0, u'1', u'1', u'1', u'1', u'1', u'1', u'1'], u'192_168_1_145': [0, u'1', u'1', u'1', 0, u'1', u'1', 0, u'1', u'1', 0, u'1', u'1', u'1', 0, 0, u'1', 0, u'1', u'1', u'1', 0, u'1', u'1', u'1', u'1', 0, u'1', u'1', u'1', u'1', u'1', u'1', 0, u'1', 0, 0, 0, u'1', 0, u'1', u'1', u'1', u'1', u'1', u'1', 0, 0, u'1', 0, u'1', 0, u'1', 0, u'1', u'1', u'1', 0, u'1']}, u'home_id': u'teja', u'device_clusters': {u'192_168_1_107': 4, u'192_168_1_128': 3, u'192_168_1_102': 5, u'192_168_1_118': 0, u'192_168_1_137': 0, u'192_168_1_124': 1, u'192_168_1_1': 0, u'192_168_1_145': 2}, u'device_visibility': {u'192_168_1_107': {u'38': u'1', u'58': u'1', u'19': u'1', u'30': u'1', u'37': u'1', u'36': u'1', u'35': u'1', u'7': u'1'}, u'192_168_1_128': {u'56': u'1', u'28': u'1', u'29': u'1', u'49': u'1', u'34': u'1', u'24': u'1', u'25': u'1', u'26': u'1', u'27': u'1', u'48': u'1', u'23': u'1', u'46': u'1', u'47': u'1', u'44': u'1', u'45': u'1', u'42': u'1', u'43': u'1', u'40': u'1', u'41': u'1', u'35': u'1', u'39': u'1', u'38': u'1', u'59': u'1', u'58': u'1', u'55': u'1', u'32': u'1', u'31': u'1', u'30': u'1', u'37': u'1', u'36': u'1', u'53': u'1', u'52': u'1', u'54': u'1', u'57': u'1', u'50': u'1'}, u'192_168_1_102': {u'59': u'1', u'58': u'1', u'1': u'1', u'3': u'1', u'2': u'1', u'5': u'1', u'4': u'1', u'7': u'1', u'6': u'1'}, u'192_168_1_118': {u'58': u'1', u'56': u'1', u'54': u'1', u'28': u'1', u'29': u'1', u'35': u'1', u'34': u'1', u'24': u'1', u'25': u'1', u'26': u'1', u'27': u'1', u'20': u'1', u'21': u'1', u'22': u'1', u'49': u'1', u'46': u'1', u'47': u'1', u'44': u'1', u'45': u'1', u'42': u'1', u'43': u'1', u'40': u'1', u'41': u'1', u'1': u'1', u'3': u'1', u'2': u'1', u'5': u'1', u'4': u'1', u'7': u'1', u'6': u'1', u'9': u'1', u'8': u'1', u'13': u'1', u'12': u'1', u'30': u'1', u'14': u'1', u'11': u'1', u'10': u'1', u'39': u'1', u'38': u'1', u'59': u'1', u'48': u'1', u'17': u'1', u'16': u'1', u'19': u'1', u'18': u'1', u'31': u'1', u'23': u'1', u'37': u'1', u'36': u'1', u'53': u'1', u'52': u'1', u'55': u'1', u'32': u'1', u'57': u'1', u'50': u'1'}, u'192_168_1_137': {u'58': u'1', u'56': u'1', u'54': u'1', u'28': u'1', u'29': u'1', u'35': u'1', u'34': u'1', u'24': u'1', u'25': u'1', u'26': u'1', u'27': u'1', u'20': u'1', u'21': u'1', u'22': u'1', u'49': u'1', u'46': u'1', u'47': u'1', u'44': u'1', u'45': u'1', u'42': u'1', u'43': u'1', u'40': u'1', u'41': u'1', u'1': u'1', u'3': u'1', u'2': u'1', u'5': u'1', u'4': u'1', u'7': u'1', u'6': u'1', u'9': u'1', u'8': u'1', u'13': u'1', u'12': u'1', u'30': u'1', u'14': u'1', u'11': u'1', u'10': u'1', u'39': u'1', u'38': u'1', u'59': u'1', u'48': u'1', u'17': u'1', u'16': u'1', u'19': u'1', u'18': u'1', u'31': u'1', u'23': u'1', u'37': u'1', u'36': u'1', u'53': u'1', u'52': u'1', u'55': u'1', u'32': u'1', u'57': u'1', u'50': u'1'}, u'192_168_1_124': {u'11': u'1', u'10': u'1', u'13': u'1', u'12': u'1', u'59': u'1', u'14': u'1', u'56': u'1', u'3': u'1', u'2': u'1', u'5': u'1', u'6': u'1', u'9': u'1', u'8': u'1', u'58': u'1'}, u'192_168_1_1': {u'58': u'1', u'56': u'1', u'54': u'1', u'28': u'1', u'29': u'1', u'35': u'1', u'34': u'1', u'24': u'1', u'25': u'1', u'26': u'1', u'27': u'1', u'20': u'1', u'21': u'1', u'22': u'1', u'49': u'1', u'46': u'1', u'47': u'1', u'44': u'1', u'45': u'1', u'42': u'1', u'43': u'1', u'40': u'1', u'41': u'1', u'1': u'1', u'3': u'1', u'2': u'1', u'5': u'1', u'4': u'1', u'7': u'1', u'6': u'1', u'9': u'1', u'8': u'1', u'13': u'1', u'12': u'1', u'30': u'1', u'14': u'1', u'11': u'1', u'10': u'1', u'39': u'1', u'38': u'1', u'59': u'1', u'48': u'1', u'17': u'1', u'16': u'1', u'19': u'1', u'18': u'1', u'31': u'1', u'23': u'1', u'37': u'1', u'36': u'1', u'53': u'1', u'52': u'1', u'55': u'1', u'32': u'1', u'57': u'1', u'50': u'1'}, u'192_168_1_145': {u'30': u'1', u'42': u'1', u'43': u'1', u'34': u'1', u'24': u'1', u'25': u'1', u'27': u'1', u'20': u'1', u'22': u'1', u'23': u'1', u'44': u'1', u'45': u'1', u'28': u'1', u'29': u'1', u'40': u'1', u'41': u'1', u'1': u'1', u'3': u'1', u'2': u'1', u'5': u'1', u'6': u'1', u'9': u'1', u'8': u'1', u'12': u'1', u'32': u'1', u'58': u'1', u'11': u'1', u'13': u'1', u'38': u'1', u'59': u'1', u'48': u'1', u'16': u'1', u'19': u'1', u'54': u'1', u'31': u'1', u'56': u'1', u'50': u'1', u'52': u'1', u'55': u'1', u'18': u'1'}}, u'_id': {u'timeSecond': 1465869665, u'timestamp': 1465869665, u'__class__': u'org.bson.types.ObjectId', u'machine': -1155399176, u'time': 1465869665000L, u'date': datetime.datetime(2016, 6, 14, 2, 1, 5), u'new': False, u'inc': -1941971993}, u'timestamp_hour': u'2016-06-13T19:00:00'}
+>>> print (device_custers_obj['device_clusters'])
+{u'192_168_1_107': 4, u'192_168_1_128': 3, u'192_168_1_102': 5, u'192_168_1_118': 0, u'192_168_1_137': 0, u'192_168_1_124': 1, u'192_168_1_1': 0, u'192_168_1_145': 2}
+>>> 
+
+
+================

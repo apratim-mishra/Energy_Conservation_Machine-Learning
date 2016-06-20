@@ -26,16 +26,34 @@ def smart_home_api(request):
 # {"c":[{"v":"192_168_1_107"},{"v":"Date(2016,06,13,00,39,0)"},{"v":"Date(2016,06,13,00,39,0)"}]},
 # ]}
 
-        day = "2016-06-13"
+        day = "2016-06-15"
+	home_id = "teja"
         db = MongoClient('localhost', 27017)
         dbconn = db.home_automation  # should be database name
         device_stats_collection = dbconn['device_stats']  # collection in DB
-        cursor = dbconn.device_stats.find({"timestamp_hour": {'$regex': day} }).sort([("timestamp_hour", pymongo.ASCENDING)])
-        #cursor = dbconn.device_stats.find({"timestamp_hour" : "2016-06-10T22:00:00"})
+        cursor = dbconn.device_stats.find({"timestamp_hour": {'$regex': day}, "home_id" : home_id }).sort([("timestamp_hour", pymongo.ASCENDING)])
+        names = dbconn.device_names.find_one({"home_id" : home_id})
+#cursor = dbconn.device_stats.find({"timestamp_hour" : "2016-06-10T22:00:00"})
         output = ""
-        output += '{"cols":[{"type":"string","id":"IP_Address"},{"type":"date","id":"Start"},{"type":"date","id":"End"}], \n "rows":['
+        output += '{"cols":[{"type":"string","id":"IP_Address"},{"type":"string","id":"Cluster_Name"},{"type":"date","id":"Start"},{"type":"date","id":"End"}], \n "rows":['
         for document in cursor:
                 devicesList = document['device_visibility']
+
+                timestamp_hour = document['timestamp_hour'] 
+                try:
+                    date_obj = datetime.datetime.strptime(timestamp_hour,
+                                                  "%Y-%m-%dT%H:%M:%S.%fZ")
+                except ValueError:
+                    date_obj = datetime.datetime.strptime(timestamp_hour,
+                                                          "%Y-%m-%dT%H:%M:%S")
+                # weekday0-19hour
+                weekday_hour = "weekday" + str(date_obj.weekday()) + "-" + str(date_obj.hour) + "hour"
+                # find device cluster if already computed
+                #print "weekday_hour:"+weekday_hour
+
+                # Eg., db.device_clusters.find({"weekday_hour" : "weekday2-0hour"})
+                device_cluster_obj = dbconn.device_clusters.find_one({"weekday_hour" : weekday_hour})
+                
                 for device in devicesList:
                         timesON = sorted(devicesList[device])
                         for time in timesON:
@@ -43,9 +61,17 @@ def smart_home_api(request):
                                 month = document['timestamp_hour'][5:-12]
                                 day = document['timestamp_hour'][8:-9]
                                 hour = document['timestamp_hour'][11:-6]
-                                ipRow = '{"v":"' + device + '"}'
+				deviceName = ""
+                                if device in names:
+                                    deviceName = names[device]
+                                ipRow = '{"v":"' +  deviceName + " ("+ device + ")" + '"}'
+                                cluster = ""
+                                if 'device_clusters' in device_cluster_obj and device in device_cluster_obj['device_clusters']:
+                                    cluster = device_cluster_obj['device_clusters'][device]
+                                
+                                cluster_name = '{"v":"' +  str(cluster)  + '"}' # TODO fix
                                 startDate = '{"v":"Date('+ year + ',' + month + ',' + day + ',' + hour + ',' + time + ',0)"}'
-                                output += '{"c":['+ ipRow + ',' + startDate + ',' + startDate + ']}, \n'
+                                output += '{"c":['+ ipRow + ',' + cluster_name + ',' + startDate + ',' + startDate + ']}, \n'
         output +=  "]}" 
         # remove last comma (,). Otherwise json parsing fails.
         last_occurance = output.rfind(",")

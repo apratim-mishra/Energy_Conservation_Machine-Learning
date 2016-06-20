@@ -43,12 +43,20 @@ def get_device_stats_mongo_doc(s):
 
 # add weekday_hour with say 'weekday0-23hour'
 def get_weekday_hourly_doc(s):
+    #import rpdb; rpdb.set_trace()
     try:
         date_obj = datetime.datetime.strptime(s['timestamp_hour'],
                                               "%Y-%m-%dT%H:%M:%S.%fZ")
     except ValueError:
-        date_obj = datetime.datetime.strptime(s['timestamp_hour'],
+        try:
+            date_obj = datetime.datetime.strptime(s['timestamp_hour'],
                                               "%Y-%m-%dT%H:%M:%S")
+        except ValueError:
+            #import rpdb; rpdb.set_trace()
+            error = "";
+            error += "error get_weekday_hourly_doc" + s
+            print (error)
+            pass
 
     # s['timestamp_hour'] = "weekday" + str(date_obj.weekday()) + "-" + str(date_obj.hour) + "hour"
     s['weekday_hour'] = "weekday" + str(date_obj.weekday()) + "-" + str(date_obj.hour) + "hour"
@@ -129,6 +137,7 @@ if __name__ == "__main__":
     rdd1 = rdd.map(get_device_stats_mongo_doc)
     rdd1.cache()  # needed as mongodb connector has bugs.
     # print("mongo_doc" + str(rdd1.take(1)))
+    # add weekday_hour with say 'weekday0-23hour' 
     rdd2 = rdd1.map(get_weekday_hourly_doc)
     # print("weekday_hourly_doc" + str(rdd2.take(1)))
     rdd3 = rdd2.map(set_device_visibility_minute_array)
