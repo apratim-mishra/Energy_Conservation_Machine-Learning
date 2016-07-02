@@ -26,7 +26,7 @@ def smart_home_api(request):
 # {"c":[{"v":"192_168_1_107"},{"v":"Date(2016,06,13,00,39,0)"},{"v":"Date(2016,06,13,00,39,0)"}]},
 # ]}
 
-        day = "2016-06-15"
+        day = "2016-06-26"
 	home_id = "teja"
         db = MongoClient('localhost', 27017)
         dbconn = db.home_automation  # should be database name
@@ -53,6 +53,7 @@ def smart_home_api(request):
 
                 # Eg., db.device_clusters.find({"weekday_hour" : "weekday2-0hour"})
                 device_cluster_obj = dbconn.device_clusters.find_one({"weekday_hour" : weekday_hour})
+                #import rpdb; rpdb.set_trace()
                 
                 for device in devicesList:
                         timesON = sorted(devicesList[device])
@@ -66,7 +67,7 @@ def smart_home_api(request):
                                     deviceName = names[device]
                                 ipRow = '{"v":"' +  deviceName + " ("+ device + ")" + '"}'
                                 cluster = ""
-                                if 'device_clusters' in device_cluster_obj and device in device_cluster_obj['device_clusters']:
+                                if device_cluster_obj is not None and 'device_clusters' in device_cluster_obj and device in device_cluster_obj['device_clusters']:
                                     cluster = device_cluster_obj['device_clusters'][device]
                                 
                                 cluster_name = '{"v":"' +  str(cluster)  + '"}' # TODO fix

@@ -40,15 +40,45 @@ in mac: sudo easy_install python-nmap
 in django settings.py
 ALLOWED_HOSTS = ['PUT IP ADDRESS'] 
 
+
+Wemo on client:-
+        pip install ouimeaux
+        sudo apt-get install python-pip
+        sudo apt-get install python-dev
+        sudo pip install gevent
+        sudo pip install ouimeaux[server]
+  to start/stop wemo power on/off
+        wemo list
+         Switch: WeMo Insight
+        wemo status
+         Switch: WeMo Insight    1
+       $ wemo switch "WeMo Insight" off
+       $ wemo switch "WeMo Insight" on
+
+
 How to run
 ===================
 
 VM: bridged mode so it can see all the devices
     make sure ifconfig shows proper ip address
-client:-
 
+wemo:-
+  nohup wemo server &
+
+
+
+client:-
   for gui : site /static/test.html
+
+
   cd ~/smart_home_app/client/
+
+while [ 1 ]
+do
+    python client_home.py
+    sleep 2
+done
+
   #python client_home.py 
    nohup python client_home.py > /dev/null 2>&1 &
    Every one minute client sends the following info to the server:-
@@ -974,3 +1004,100 @@ SyntaxError: invalid syntax
 
 
 ================
+
+
+
+wemo server ouimeaux
+
+
+  $ curl http://localhost:5000/api/environment
+  {
+    "WeMo Insight": {
+        "currentpower": 44080,
+        "host": "192.168.1.119",
+        "lastchange": "2016-06-25 20:18:57",
+        "model": "Belkin Insight 1.0",
+        "name": "WeMo Insight",
+        "onfor": 510,
+        "ontoday": 1042,
+        "ontotal": 1018,
+        "serialnumber": "231613K12014D3",
+        "state": 1, <-- on 
+        "todaymw": 0.012668583586705,
+        "totalmw": 760115,
+        "type": "Insight"
+    }
+  }
+    $ wemo -v switch "WeMo Insight" off
+   $ curl http://localhost:5000/api/environment
+  {
+    "WeMo Insight": {
+        "currentpower": 0,
+        "host": "192.168.1.119",
+        "lastchange": "2016-06-25 20:29:14",
+        "model": "Belkin Insight 1.0",
+        "name": "WeMo Insight",
+        "onfor": 617,
+        "ontoday": 1149,
+        "ontotal": 1122,
+        "serialnumber": "231613K12014D3",
+        "state": 0, <-- off
+        "todaymw": 0.014138716949440999,
+        "totalmw": 848323,
+        "type": "Insight"
+    }
+}
+
+tejasvi@tejasvi:~$ curl http://192.168.1.137:5000/api/device/WeMo%20Insight
+{
+    "currentpower": 43940,
+    "host": "192.168.1.119",
+    "lastchange": "2016-06-25 20:29:29",
+    "model": "Belkin Insight 1.0",
+    "name": "WeMo Insight",
+    "onfor": 1539,
+    "ontoday": 2688,
+    "ontotal": 2625,
+    "serialnumber": "231613K12014D3",
+    "state": 1,
+    "todaymw": 0.032311083979555,
+    "totalmw": 1938665,
+    "type": "Insight"
+}
+
+
+
+
+bash-3.2$ curl -X POST http://192.168.1.137:5000/api/device/Wemo%20Insight -d '{"state":"off"}'
+{
+    "currentpower": 0,
+    "host": "192.168.1.119",
+    "lastchange": "2016-06-25 20:29:29",
+    "model": "Belkin Insight 1.0",
+    "name": "WeMo Insight",
+    "onfor": 1913,
+    "ontoday": 3062,
+    "ontotal": 2990,
+    "serialnumber": "231613K12014D3",
+    "state": 0,
+    "todaymw": 0.036698600733972,
+    "totalmw": 2201916,
+    "type": "Insight"
+}
+bash-3.2$ curl -X POST http://192.168.1.137:5000/api/device/Wemo%20Insight -d '{"state":"on"}'
+{
+    "currentpower": 0,
+    "host": "192.168.1.119",
+    "lastchange": "2016-06-25 21:01:23",
+    "model": "Belkin Insight 1.0",
+    "name": "WeMo Insight",
+    "onfor": 1913,
+    "ontoday": 3062,
+    "ontotal": 2990,
+    "serialnumber": "231613K12014D3",
+    "state": 1,
+    "todaymw": 0.036698600733972,
+    "totalmw": 2201916,
+    "type": "Insight"
+}
+
