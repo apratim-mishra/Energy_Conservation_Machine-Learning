@@ -26,7 +26,7 @@ def smart_home_api(request):
 # {"c":[{"v":"192_168_1_107"},{"v":"Date(2016,06,13,00,39,0)"},{"v":"Date(2016,06,13,00,39,0)"}]},
 # ]}
 
-        day = "2016-06-26"
+        day = "2016-07-01"
 	home_id = "teja"
         db = MongoClient('localhost', 27017)
         dbconn = db.home_automation  # should be database name

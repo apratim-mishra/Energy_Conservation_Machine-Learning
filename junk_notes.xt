@@ -3,11 +3,14 @@ Install
 ---------
 Ubuntu 14.04
 git clone 
+
 in home directory wget http://apache.cs.utah.edu/spark/spark-1.5.2/spark-1.5.2-bin-hadoop2.6.tgz
   cp ./conf/log4j.properties.template ./conf/log4j.properties
-  In the file: change as:
-  #log4j.rootCategory=INFO, console
-  log4j.rootCategory=WARN, console
+     In the file: change as:
+     #log4j.rootCategory=INFO, console
+     log4j.rootCategory=WARN, console
+   cp ./conf/spark-defaults.template ./conf/spark-defaults.properties <-- this reduces memory usage of spark
+      spark.driver.memory              100m  
 
 Install Java:-
 sudo add-apt-repository ppa:webupd8team/java
@@ -123,7 +126,8 @@ WriteResult({ "nInserted" : 1 })
 
 learning / services:-
 
-~/spark-1.5.2-bin-hadoop2.6/bin/pyspark --jars /home/ubuntu/Energy_Conservation_Machine-Learning/spark-mongo-libs/mongo-hadoop-core-1.4.2.jar,/home/ubuntu/Energy_Conservation_Machine-Learning/spark-mongo-libs/mongo-java-driver-2.13.2.jar ~/Energy_Conservation_Machine-Learning/services/cluster-home-devices.py
+~/spark-1.5.2-bin-hadoop2.6/bin/pyspark --executor-memory 100M --jars /home/ubuntu/Energy_Conservation_Machine-Learning/spark-mongo-libs/mongo-hadoop-core-1.4.2.jar,/home/ubuntu/Energy_Conservation_Machine-Learning/spark-mongo-libs/mongo-java-driver-2.13.2.jar ~/Energy_Conservation_Machine-Learning/services/cluster-home-devices.py
+
 
 
 old cd /home/bigdata/smart_home_app/services

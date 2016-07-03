@@ -6,6 +6,7 @@ import datetime
 
 from pymongo import MongoClient
 import json
+import pyspark
 
 # to run
 # /home/bigdata/spark-1.5.2-bin-hadoop2.6/bin/pyspark --jars /home/bigdata/smart_home_app/spark-mongo-libs/mongo-hadoop-core-1.4.2.jar,/home/bigdata/smart_home_app/spark-mongo-libs/mongo-java-driver-2.13.2.jar cluster-home-devices.py
@@ -132,10 +133,12 @@ if __name__ == "__main__":
         valueClass='org.apache.hadoop.io.MapWritable',
         conf={'mongo.input.uri': database_url, 'mongo.input.split.create_input_splits': 'false'})
         #conf={'mongo.input.uri': database_url})
-    rdd.cache()
+    #rdd.cache()
+    rdd.persist(pyspark.StorageLevel.DISK_ONLY)
     # print("Hadoop RDD" + str(rdd.take(1)))
     rdd1 = rdd.map(get_device_stats_mongo_doc)
-    rdd1.cache()  # needed as mongodb connector has bugs.
+    # rdd1.cache()  # needed as mongodb connector has bugs.
+    rdd1.persist(pyspark.StorageLevel.DISK_ONLY)  # needed as mongodb connector has bugs.
     # print("mongo_doc" + str(rdd1.take(1)))
     # add weekday_hour with say 'weekday0-23hour' 
     rdd2 = rdd1.map(get_weekday_hourly_doc)
@@ -144,6 +147,11 @@ if __name__ == "__main__":
     # print("weekday_hourly_doc_device_minute" + str(rdd3.take(10)))
 
     rdd_home_weekly = rdd3;
+    # rdd_home_weekly.cache()
+    rdd_home_weekly.persist(pyspark.StorageLevel.DISK_ONLY)
+    rdd1.unpersist()
+    rdd2.unpersist()
+    rdd3.unpersist()
 
     for weekday in range(0, 7):  # [0 to 6]
         for hour in range(0, 24):
@@ -151,7 +159,9 @@ if __name__ == "__main__":
 
             rdd_to_cluster = rdd_home_weekly.filter(lambda s: s['weekday_hour'] == current_weekday_hour_string)
             rdd_to_cluster_model = rdd_to_cluster.map(lambda s: s['device_visibility_by_minute'])
-            rdd_to_cluster_model.cache() # need to do for MangoDB Connector bug (exception on multi operations)
+            #rdd_to_cluster_model.cache() # need to do for MangoDB Connector bug (exception on multi operations)
+            #rdd_to_cluster_model.cache()
+            rdd_to_cluster_model.persist(pyspark.StorageLevel.DISK_ONLY) # need to do for MangoDB Connector bug (exception on multi operations)
             result_count = rdd_to_cluster_model.count()
             # print("data count=" + str(result_count) + " " + current_weekday_hour_string)
             # import rpdb; rpdb.set_trace()
@@ -200,6 +210,8 @@ if __name__ == "__main__":
             #rdd_with_device_clusters.cache()
             print(rdd_with_device_clusters.count())
             save_in_mongodb(rdd_with_device_clusters)
+            rdd_to_cluster_model.unpersist()
+            rdd_with_device_clusters.unpersist()
             # import rpdb; rpdb.set_trace()
             # Bugs 
             # Save this RDD as a Hadoop "file".
