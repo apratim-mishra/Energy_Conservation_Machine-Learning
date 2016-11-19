@@ -1,4 +1,18 @@
 
+Tasks
+--------
+- run spark nightly
+- Select by date
+- ignore fully on elements eg., chromecast
+- dump on/off data also by label
+http://ip:8043/static/test.html
+http://54.201.150.12:8043/static/test.html
+curl "http://54.201.150.12:8043/smart_home_app/?op=hourly_data&day=2016-07-01"
+curl "http://54.201.150.12:8043/smart_home_app/?op=compute_clusters&day=2016-07-01"
+- calculate clusters etc.,  for the given day 
+- Algo
+- analysis
+
 Install
 ---------
 Ubuntu 14.04
@@ -59,6 +73,7 @@ Wemo on client:-
        $ wemo switch "WeMo Insight" on
 
 
+
 How to run
 ===================
 
@@ -71,8 +86,9 @@ wemo:-
 
 
 client:-
-  for gui : site /static/test.html
-
+  for gui : site http://ip:8043/static/test.html
+   change date in file: ~/Energy_Conservation_Machine-Learning/smart_home_app/views.py
+        - day = "2016-07-01"
 
   cd ~/smart_home_app/client/
 
@@ -93,14 +109,15 @@ done
   (for simulation: ~/smart_home_app/client/client_simulator.py)
   
 webserver:
+  (with in screen)
   cd ~/Energy_Conservation_Machine-Learning
-  #python manage.py runserver 0.0.0.0:8000
+  #python manage.py runserver 0.0.0.0:8043
   #nohup python manage.py runserver 0.0.0.0:8043&
   nohup python manage.py runserver 0.0.0.0:8043 > /dev/null 2>&1 &
   
 
   logs: 2016-02-07T19:00:00 weekday_hour:weekday6-19hour
-[08/Feb/2016 03:42:05] "POST /smart_home_app/ HTTP/1.1" 200 13
+<[08/Feb/2016 03:42:05] "POST /smart_home_app/ HTTP/1.1" 200 13
   2016-02-14T17:00:00 weekday_hour:weekday6-17hour
  [15/Feb/2016 01:21:54] "POST /smart_home_app/ HTTP/1.1" 200 13
 
@@ -120,6 +137,10 @@ mongo:-
      > db.device_stats.find()
      > db.device_stats.find().count()
      > db.device_stats.find().pretty()
+     > db.device_clusters.find()
+  
+     display all rows in reverse chrological order  (and few fields only)
+     > db.device_clusters.find({}, {"timestamp_hour":1, "device_clusters":1, "_id":0} ).sort({"timestamp_hour":-1}).toArray()
 
     db.device_names.insert( {"home_id" : "teja", "192_168_1_107" : "IPhone", "192_168_1_102" : "Tejasvi_Mac", "192_168_1_118" : "chromecast", "192_168_1_137": "ASUS", "192_168_1_124" : "Tejasvi-Cell", "192_168_1_1": "router" , "192_168_1_145": "?", "192_168_1_126" : "Krishna_MAC", "192_168_1_128" : "?"})
 WriteResult({ "nInserted" : 1 })

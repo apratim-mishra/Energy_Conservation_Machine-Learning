@@ -5,6 +5,47 @@
     <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
     <script type="text/javascript">
 
+
+
+$(document).ready(function(){
+    $("#update_data").click(function(){
+        //alert("Text: " + $("#day").val());
+       $("#compute_clusters").html("Processing");
+       $("#hourly_data").html("Processing");
+       //alert("Text: " + $("#day").val());
+        computeClusters()
+        updateHourlyData()
+        drawChart()        
+       
+    });
+
+});
+
+
+
+    function computeClusters()
+    {
+      url = "/smart_home_app/?op=compute_clusters&day="+$("#day").val()
+      var computeClusters = $.ajax({
+          url: url, 
+          async: false,
+          timeout: 3000000 // milli seconds
+          }).responseText;
+      //alert(hourlyData);
+      $("#compute_clusters").html(computeClusters);
+    }
+
+    function updateHourlyData()
+    {
+      url = "/smart_home_app/?op=hourly_data&day="+$("#day").val()
+      var hourlyData = $.ajax({
+          url: url, 
+          async: false
+          }).responseText;
+      //alert(hourlyData);
+      $("#hourly_data").html(hourlyData);
+    }
+
    // see https://developers.google.com/chart/interactive/docs/gallery/timeline#a-simple-example
    // see https://developers.google.com/chart/interactive/docs/php_example#exampleusingphphtml-file
     google.charts.load('current', {'packages':['timeline']});
@@ -15,8 +56,15 @@
 
 		//hAxis: {viewWindow: { min: new Date(2016,0,1), max: new Date(2016,0,8) }}
 	//}
+      <!-- var jsonData = $.ajax({ -->
+      <!--     url: "/smart_home_app/", -->
+      <!--     dataType: "json", -->
+      <!--     async: false -->
+      <!--     }).responseText; -->
+
+      url = "/smart_home_app/?op=graph&day="+$("#day").val()
       var jsonData = $.ajax({
-          url: "/smart_home_app/",
+          url: url, //"/smart_home_app/?op=graph&day=2016-08-20",
           dataType: "json",
           async: false
           }).responseText;
@@ -40,6 +88,19 @@
   </head>
 
   <body>
+    
+    Day: <input type="text" id="day" value="2016-07-01"><br>
+    <button id="update_data">Refresh</button>
+    <h2>Hourly data</h2>
+    
+    <p id="hourly_data">This is a paragraph.</p>
+
+    <h2>Clusters for the day</h2>
     <div id="timeline" style="height: 2000px;"></div>
+
+    <h2>Compute clusters backend</h2>
+    <p id="compute_clusters">This is a paragraph.</p>
+
+
   </body>
 </html>
