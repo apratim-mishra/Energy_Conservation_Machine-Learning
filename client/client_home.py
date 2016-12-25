@@ -9,6 +9,14 @@ import nmap
 #           sudo python -m easy_install python-nmap
 #
 # in mac: sudo easy_install python-nmap
+#
+#sudo bash
+#while [ 1 ]
+#do  
+#    python client_home.py
+#    sleep 2
+#done
+
 # python client_home1.py 
 # ['192.168.1.1', '192.168.1.104', '192.168.1.106', '192.168.1.107', '192.168.1.109', '192.168.1.118', '192.168.1.119', '192.168.1.145', '192.168.1.146']
 
@@ -37,10 +45,27 @@ import time
 #for count in range(1, 100000):
 while True:
     #time.sleep(60)
-    time.sleep(60)
+    time.sleep(30)
     nm.scan(hosts=network_addr_to_scan, arguments='-sP')
     print nm.all_hosts()
+
+    # for ip address only: run as non-root
     visible_hosts = nm.all_hosts()
+
+    # For mac addresses: run as root
+    # http://stackoverflow.com/questions/26198714/how-to-retrieve-mac-addresses-from-nearby-hosts-in-python
+    visible_hosts = []
+    for h in nm.all_hosts():
+        if 'mac' in nm[h]['addresses']:
+            #print(nm[h]['addresses']['mac'])
+            visible_hosts.append(nm[h]['addresses']['mac'])
+        else: # no mac address known
+            #print "no mac" +  str(nm[h]['addresses'])
+            #print nm[h]['addresses']['ipv4']
+            visible_hosts.append(nm[h]['addresses']['ipv4'])
+
+
+
     curr_time = datetime.datetime.now()
     # round to the minute.
     hour = curr_time.hour
@@ -84,7 +109,10 @@ while True:
 
         except:
             # ignore not able to access the wemo device
-            pass
+            print "start wemo server nohup wemo server &"
+            print "check: curl http://localhost:5000/api/environment "
+            print "ping wemo ip 101"
+            #pass
 
 
     # send the info to a server
