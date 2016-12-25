@@ -64,6 +64,7 @@ if __name__ == "__main__":
         if (cost == 0):
             break
 
+    
     print("optimal_clusters:" + str(optimal_clusters) + " optimal_cost:" + str(optimal_cost))
             
             

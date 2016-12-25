@@ -21,8 +21,10 @@ def smart_home_api(request):
     if request.method == 'GET' and request.GET['op'] == 'compute_clusters':
         day=request.GET['day'] # eg., "2016-08-20"
 	home_id = "teja"
+        #cmd = "/home/ubuntu/spark-1.5.2-bin-hadoop2.6/bin/pyspark --executor-memory 100M --jars /home/ubuntu/Energy_Conservation_Machine-Learning/spark-mongo-libs/mongo-hadoop-core-1.4.2.jar,/home/ubuntu/Energy_Conservation_Machine-Learning/spark-mongo-libs/mongo-java-driver-2.13.2.jar  /home/ubuntu//Energy_Conservation_Machine-Learning/services/cluster-home-devices-by-day.py " + day
         cmd = "/home/ubuntu/spark-1.5.2-bin-hadoop2.6/bin/pyspark --executor-memory 100M --jars /home/ubuntu/Energy_Conservation_Machine-Learning/spark-mongo-libs/mongo-hadoop-core-1.4.2.jar,/home/ubuntu/Energy_Conservation_Machine-Learning/spark-mongo-libs/mongo-java-driver-2.13.2.jar  /home/ubuntu//Energy_Conservation_Machine-Learning/services/cluster-home-devices-by-day.py " + day
 
+        print cmd
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()
         #p.wait(timeout=3000)
         return Response(p)        
@@ -32,6 +34,7 @@ def smart_home_api(request):
         # Eg., db.device_clusters.find({"timestamp_hour":"2016-07-01T22:00:00", "home_id":"teja"},{"device_visibility_by_minute":1,"_id":0 } ).pretty()
         # db.device_clusters.find({"timestamp_hour":"2016-07-01T02:00:00", "home_id":"teja"},{"device_visibility_by_minute":1,"_id":0 } ).pretty()
         day=request.GET['day'] # eg., "2016-08-20"
+        hour_input=request.GET['hour'] # eg., "all" or 0 or 1 ... 23
 	home_id = "teja"
         db = MongoClient('localhost', 27017)
         dbconn = db.home_automation  # should be database name
@@ -40,7 +43,16 @@ def smart_home_api(request):
         hour = "2016-07-01T02:00:00"
         hour = day + "T" + "02" + ":00:00"
         out = ""
-        for count in range(0,24): # hour
+        names = dbconn.device_names.find_one({"home_id" : home_id})
+
+        if hour_input == "all":
+            start_hour = 0
+            end_hour=24
+        else:
+            start_hour=int(hour_input)
+            end_hour=int(hour_input)+1
+            
+        for count in range(start_hour,end_hour): # hour
             hour = day + "T" + "%02d" % count  + ":00:00"
             #print day + "T" + "%02d" % count  + ":00:00"
 
@@ -48,11 +60,22 @@ def smart_home_api(request):
             
             device_cluster_map = {}
             # find the device and its cluster for the hour
+            # db.device_clusters.find({"timestamp_hour":"2016-11-26T23:00:00", "home_id":"teja"} ).pretty()
             cursor = dbconn.device_clusters.find({"timestamp_hour": hour, "home_id" : home_id }, {"device_clusters":1,"_id":0 } )
             for document in cursor:
                 for device in document['device_clusters']:  
                     #print device + " " + str(document['device_clusters'][device])
                     device_cluster_map[device] = document['device_clusters'][device]
+
+            for cluster_number in sorted(set(device_cluster_map.itervalues())):
+                tmp_out =  "cluster " + str(cluster_number)
+                for device in device_cluster_map:
+                    if device_cluster_map[device] == cluster_number:
+                        deviceName = device
+                        if device in names:
+                            deviceName =  names[device]
+                        tmp_out = tmp_out +  " " + deviceName
+                out = out + tmp_out + "<br/>"
 
             # now find the device visitibility for the hour (for every minute)
             cursor = dbconn.device_clusters.find({"timestamp_hour": hour, "home_id" : home_id }, {"device_visibility_by_minute":1,"_id":0 } )
@@ -62,19 +85,26 @@ def smart_home_api(request):
 
             out = out + "<tr>"
             out = out + "<td>" +  hour + "</td>"
-            out = out + "<td>" +  "cluster" + "</td>"
+            out = out + "<td>" +  "c" + "</td>"
             for minute in range(1,60):
                 out = out + "<td>" +  str(minute) + "</td>"
             out = out + "</tr>"
 
             for document in cursor:
                 for device in document['device_visibility_by_minute']:
+                    deviceName = device;
+                    if device in names:
+                        deviceName =  names[device]
+
                     out = out + "<tr>"
-                    out = out + "<td>" +  device + "</td>" 
-                    out = out + "<td>cluster" +  str(device_cluster_map[device]) + "</td>" 
+                    #out = out + "<td>" +  device + " " +  deviceName + "</td>" 
+                    out = out + "<td>" +  deviceName + "</td>" 
+                    out = out + "<td><font color=\"red\">" +  str(device_cluster_map[device]) + "</font></td>" 
                     for minute_visibility in document['device_visibility_by_minute'][device]:
                         out = out + "<td>" + str(minute_visibility) + "</td>"
                 out = out + "</tr>"
+
+
             out =  out + "</table>"
             #print out
         return Response(out)
@@ -95,11 +125,17 @@ def smart_home_api(request):
         #day = "2016-06-28"
         #day = "2016-08-20"
         day=request.GET['day'] # eg., "2016-08-20"
+        hour_input=request.GET['hour'] # eg., "all" or 0 or 1 ... 23
 	home_id = "teja"
         db = MongoClient('localhost', 27017)
         dbconn = db.home_automation  # should be database name
         device_stats_collection = dbconn['device_stats']  # collection in DB
-        cursor = dbconn.device_stats.find({"timestamp_hour": {'$regex': day}, "home_id" : home_id }).sort([("timestamp_hour", pymongo.ASCENDING)])
+        if hour_input == "all":
+            cursor = dbconn.device_stats.find({"timestamp_hour": {'$regex': day}, "home_id" : home_id }).sort([("timestamp_hour", pymongo.ASCENDING)])
+        else:
+            hour = day + "T" + "%02d" % int(hour_input)  + ":00:00"
+            cursor = dbconn.device_stats.find({"timestamp_hour": hour, "home_id" : home_id }).sort([("timestamp_hour", pymongo.ASCENDING)])
+
         names = dbconn.device_names.find_one({"home_id" : home_id})
 #cursor = dbconn.device_stats.find({"timestamp_hour" : "2016-06-10T22:00:00"})
         output = ""
@@ -219,7 +255,7 @@ def smart_home_api(request):
                         # import rpdb; rpdb.set_trace()
                         int_minute = int(minute)
                         device_minute_value = device_visibility[device][minute]
-                        past_device_minute_value = device_custers_obj['device_visibility_by_minute'][device][int_minute]
+                        past_device_minute_value = device_custers_obj['device_visibility_by_minute'][device][int_minute] ## BUG if int_minute is 60 ???
                         if int(device_minute_value) == 1 and past_device_minute_value == 0:
                             response_string[str(device)] = "switch off"
 

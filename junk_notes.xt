@@ -9,9 +9,24 @@ http://ip:8043/static/test.html
 http://54.201.150.12:8043/static/test.html
 curl "http://54.201.150.12:8043/smart_home_app/?op=hourly_data&day=2016-07-01"
 curl "http://54.201.150.12:8043/smart_home_app/?op=compute_clusters&day=2016-07-01"
-- calculate clusters etc.,  for the given day 
+- DONE calculate clusters etc.,  for the given day 
 - Algo
 - analysis
+   ~/Energy_Conservation_Machine-Learning/services$ python daily_dump.py "2016-11-28" 
+   python daily_dump.py "2016-11-29"  "2016-11-30 
+   2016-12-01, 2016-12-02
+   2016-12-08 2016-12-09 12-10 12-7
+- have invisibility also for clustering ???
+- find dependency: if phone come only then laptop and wemo light ??
+
+Analysis
+----------
+
+cd /home/ubuntu/Energy_Conservation_Machine-Learning/services
+python daily_dump.py "2016-12-23"  > /tmp/1223.txt ;/home/ubuntu/spark-1.5.2-bin-hadoop2.6/bin/pyspark cluster-devices-daily.py /tmp/1223.txt 5
+
+python daily_dump.py "2016-11-30"  30 > /tmp/1130_30days.txt
+/home/ubuntu/spark-1.5.2-bin-hadoop2.6/bin/pyspark cluster-devices-daily.py /tmp/1130_30days.txt 5
 
 Install
 ---------
@@ -47,8 +62,8 @@ sublime:-
   sudo add-apt-repository -y ppa:webupd8team/sublime-text-2
   sudo apt-get install sublime-text
 
-client
-:
+client:
+ssh tejasvi 
  in ubuntu: sudo apt-get install nmap
            sudo python -m easy_install python-nmap
 
@@ -77,8 +92,9 @@ Wemo on client:-
 How to run
 ===================
 
-VM: bridged mode so it can see all the devices
+OLD VM: bridged mode so it can see all the devices
     make sure ifconfig shows proper ip address
+AWS
 
 wemo:-
   nohup wemo server &
@@ -92,6 +108,7 @@ client:-
 
   cd ~/smart_home_app/client/
 
+sudo bash
 while [ 1 ]
 do
     python client_home.py
@@ -138,12 +155,50 @@ mongo:-
      > db.device_stats.find().count()
      > db.device_stats.find().pretty()
      > db.device_clusters.find()
-  
+
+     display by date:-  
+     db.device_stats.find({"timestamp_hour": {'$regex': '2016-12-16'}, "home_id" : "teja" }  ).sort({"timestamp_hour":-1}).toArray()
+
      display all rows in reverse chrological order  (and few fields only)
      > db.device_clusters.find({}, {"timestamp_hour":1, "device_clusters":1, "_id":0} ).sort({"timestamp_hour":-1}).toArray()
-
-    db.device_names.insert( {"home_id" : "teja", "192_168_1_107" : "IPhone", "192_168_1_102" : "Tejasvi_Mac", "192_168_1_118" : "chromecast", "192_168_1_137": "ASUS", "192_168_1_124" : "Tejasvi-Cell", "192_168_1_1": "router" , "192_168_1_145": "?", "192_168_1_126" : "Krishna_MAC", "192_168_1_128" : "?"})
+     
+     See all Data:-
+      db.device_stats.find({}  ).sort({"timestamp_hour":-1}).toArray()
+Use sort my MAC:- http://192.168.1.1/DHCPTable.asp
+OLD     db.device_names.insert( {"home_id" : "teja", "192_168_1_107" : "IPhone", "192_168_1_102" : "Tejasvi_Mac", "192_168_1_118" : "chromecast", "192_168_1_137": "ASUS", "192_168_1_124" : "Tejasvi-Cell", "192_168_1_1": "router" , "192_168_1_145": "?", "192_168_1_126" : "Krishna_MAC", "192_168_1_128" : "?"})
 WriteResult({ "nInserted" : 1 })
+Use this to remove:-
+  db.device_names.find() 
+  db.device_names.remove( {"_id": ObjectId("4d512b45cc9374271b02ec4f")});
+  
+db.device_names.deleteMany({})
+Use sort my MAC:- http://192.168.1.1/DHCPTable.asp
+    db.device_names.insert( {"home_id" : "teja", 
+                            "00:6B:9E:4A:42:83":"visiotv_147",
+			    "00:BB:3A:11:E7:D5":"145",
+			    "192_168_1_137":"asus",
+			    "5C:F8:A1:6D:B7:EC":"chromebook",
+			    "64:BC:0C:67:97:BC":"tphonenexus",
+			    "6C:AD:F8:2B:AA:8D":"chromecast",
+			    "80:56:F2:59:85:E2":"LAN_106",
+			    "94:94:26:95:12:0B":"iphone",
+			    "AC:BC:32:B4:01:27":"kmacpro",
+			    "B8:E8:56:43:49:08":"tmacair",
+			    "C0:56:27:B4:A5:79":"wemo",
+			    "C0:C1:C0:B2:BE:C4":"router",
+			    "C8:EB:8B:96:B6:34":"tabletidea",
+			    "B8:8D:12:08:6E:98":"sunmacair",
+			    "AC:37:43:53:5E:C6":"abhphone"
+			    }
+			    )
+
+00:18:61:2F:1C:72 oom a
+to delete or remove rols
+> db.device_stats.deleteMany({})
+{ "acknowledged" : true, "deletedCount" : 875 }
+> db.device_clusters.deleteMany({})
+{ "acknowledged" : true, "deletedCount" : 168 }
+> 
 
 learning / services:-
 
@@ -929,7 +984,8 @@ git clone https://github.com/tejasvikothapalli/Energy_Conservation_Machine-Learn
 echo "# Energy_Conservation_Machine-Learning" >> README.md
 git init
 #git add README.md
-git add .
+git status
+#git add .
 git commit -m "first commit"
 git remote add origin https://github.com/tejasvikothapalli/Energy_Conservation_Machine-Learning.git
 git push -u origin master
@@ -1126,3 +1182,22 @@ bash-3.2$ curl -X POST http://192.168.1.137:5000/api/device/Wemo%20Insight -d '{
     "type": "Insight"
 }
 
+
+
+
+========================
+
+MAC address instead of IP:-
+http://stackoverflow.com/questions/26198714/how-to-retrieve-mac-addresses-from-nearby-hosts-in-python
+
+# Vendor list for MAC address
+nm.scan('192.168.0.0/24', arguments='-O')
+for h in nm.all_hosts():
+    if 'mac' in nm[h]['addresses']:
+        print(nm[h]['addresses'], nm[h]['vendor'])
+
+
+The mac field is only populated when the overall program has been run as root.
+
+
+============
