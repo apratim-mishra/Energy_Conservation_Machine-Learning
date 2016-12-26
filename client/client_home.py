@@ -3,7 +3,8 @@ import requests
 import datetime
 import json
 import random
-import nmap
+#import nmap
+
 
 # in ubuntu: sudo apt-get install nmap
 #           sudo python -m easy_install python-nmap
@@ -21,7 +22,7 @@ import nmap
 # ['192.168.1.1', '192.168.1.104', '192.168.1.106', '192.168.1.107', '192.168.1.109', '192.168.1.118', '192.168.1.119', '192.168.1.145', '192.168.1.146']
 
 
-nm = nmap.PortScanner()
+
 home_id = "teja"
 network_addr_to_scan = "192.168.1.1/24"
 #url = "http://localhost:8000/smart_home_app/?"
@@ -41,30 +42,76 @@ import time
 
 # {"home_id": "homeid1", "device_visibility": {"192.168.1.118": {"38": "1"}, "192.168.1.102": {"38": "1"}, "192.168.1.104": {"38": "1"}, "192.168.1.106": {"38": "1"}, "192.168.1.146": {"38": "1"}, "192.168.1.1": {"38": "1"}}, "timestamp_hour": "2016-02-07T17:38:00"}
 
+print "RUN ME AS ROOT !!!!!"
+use_nmap = False
+
 # loop every minute.
 #for count in range(1, 100000):
 while True:
     #time.sleep(60)
     time.sleep(30)
-    nm.scan(hosts=network_addr_to_scan, arguments='-sP')
-    print nm.all_hosts()
 
-    # for ip address only: run as non-root
-    visible_hosts = nm.all_hosts()
+    if use_nmap:
+        import nmap
+        nm = nmap.PortScanner()
+        # To debug in root: nmap  --send-ip  -sP   "192.168.1.1-255"
+        # verify with :for i in $(seq 101 145); do ping -c1 -t 1 192.168.1.$i; done
+        #nm.scan(hosts=network_addr_to_scan, arguments='-sP')
+        nm.scan(hosts=network_addr_to_scan, arguments=' --send-ip -sP')
+        print nm.all_hosts()
 
-    # For mac addresses: run as root
-    # http://stackoverflow.com/questions/26198714/how-to-retrieve-mac-addresses-from-nearby-hosts-in-python
-    visible_hosts = []
-    for h in nm.all_hosts():
-        if 'mac' in nm[h]['addresses']:
-            #print(nm[h]['addresses']['mac'])
-            visible_hosts.append(nm[h]['addresses']['mac'])
-        else: # no mac address known
-            #print "no mac" +  str(nm[h]['addresses'])
-            #print nm[h]['addresses']['ipv4']
-            visible_hosts.append(nm[h]['addresses']['ipv4'])
+        # for ip address only: run as non-root
+        visible_hosts = nm.all_hosts()
 
+        # For mac addresses: run as root
+        # http://stackoverflow.com/questions/26198714/how-to-retrieve-mac-addresses-from-nearby-hosts-in-python
+        visible_hosts = []
+        for h in nm.all_hosts():
+             if 'mac' in nm[h]['addresses']:
+                 #print(nm[h]['addresses']['mac'])
+                 visible_hosts.append(nm[h]['addresses']['mac'])
+             else: # no mac address known
+                 #print "no mac" +  str(nm[h]['addresses'])
+                 #print nm[h]['addresses']['ipv4']
+                 visible_hosts.append(nm[h]['addresses']['ipv4'])
 
+    else: # uses fping
+        # apt-get install fping
+        import subprocess
+        cmd =  "fping -q -a -A -c1 -t500 -g " + network_addr_to_scan + " "
+        fping_out= subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE).stderr.read()
+
+        ips_alive=[]
+        for line in fping_out.splitlines():
+            # fping -q -a -A -c1 -t500 -g "192.168.1.0/24" 
+            # 192.168.1.103 : xmt/rcv/%loss = 1/1/0%, min/avg/max = 4.30/4.30/4.30
+            # 192.168.1.104 : xmt/rcv/%loss = 1/0/100%
+            if 'min/avg/max' in line:
+                #print line
+                #print line.split()[0]
+                ips_alive.append(line.split()[0])
+
+        ip_mac_map = {}
+        arp_out= subprocess.Popen("arp -n", shell=True, stdout=subprocess.PIPE).stdout.read()
+        for line in arp_out.splitlines():
+            # arp -n | grep -v incomplete
+            # Address                  HWtype  HWaddress           Flags Mask            Iface
+            # 192.168.1.112            ether   c0:56:27:b4:a5:79   C                     wlan0
+            # 192.168.1.103            ether   ac:bc:32:b4:01:27   C                     wlan0
+            curr_ip = line.split()[0]
+            curr_mac = line.split()[2]
+            ip_mac_map[curr_ip] = curr_mac
+            #print curr_ip + " " + curr_mac
+
+        macs_alive = []
+        for ip in ips_alive:
+            default_value = ip
+            mac_alive = ip_mac_map.get(ip, default_value)
+            mac_alive = mac_alive.upper()
+            macs_alive.append(mac_alive)
+        visible_hosts=macs_alive
+
+        
 
     curr_time = datetime.datetime.now()
     # round to the minute.
@@ -91,7 +138,7 @@ while True:
     # Add wemo power states also
     import urllib2
     import json
-    wemo_url_list  = ["http://localhost:5000/api/device/WeMo%20Insight"]
+    wemo_url_list  = ["http://localhost:5000/api/device/WeMo%20Insight", "http://localhost:5000/api/device/WeMo%20Switch1"]
 
     for wemo in wemo_url_list:
         try :
@@ -100,7 +147,8 @@ while True:
             #print "wemo response" + wemo + ":" + response
             json_obj = json.loads(response)
             # is the wemo powered on ?
-            #print "wemo current state" + str(json_obj["state"])
+            formatted_device = wemo.rsplit('/', 1)[-1]
+            print "wemo current state:" + formatted_device + ":" + str(json_obj["state"])
             if json_obj["state"] == 1:
                 # get the last port of the wemo after "/" eg., WeMo%20Insight
                 formatted_device = wemo.rsplit('/', 1)[-1]
