@@ -192,7 +192,7 @@ def smart_home_api(request):
 
     if request.method == 'POST':
         json_str = (request.body.decode('utf-8'))
-        # print "***" + json_str + "***"
+        print "***" + json_str + "***"
         json_obj = json.loads(json_str)
 
         # import pdb; pdb.set_trace()        
@@ -236,7 +236,7 @@ def smart_home_api(request):
                 device_minute_value = device_visibility[key][key1]
                 device_visibility_upsert_set[device_minute_key] = device_minute_value
 
-        print  device_visibility_upsert_set
+        #print  device_visibility_upsert_set
         device_stats_collection.update({"home_id": home_id, "timestamp_hour": timestamp_hour},
                                      {"$set": device_visibility_upsert_set},
                                      upsert=True)
@@ -255,7 +255,7 @@ def smart_home_api(request):
                         # import rpdb; rpdb.set_trace()
                         int_minute = int(minute)
                         device_minute_value = device_visibility[device][minute]
-                        past_device_minute_value = device_custers_obj['device_visibility_by_minute'][device][int_minute] ## BUG if int_minute is 60 ???
+                        past_device_minute_value = device_custers_obj['device_visibility_by_minute'][device][int_minute] ## BUG if int_minute is 60 ??? 59 ??
                         if int(device_minute_value) == 1 and past_device_minute_value == 0:
                             response_string[str(device)] = "switch off"
 

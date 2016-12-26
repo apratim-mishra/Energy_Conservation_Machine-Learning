@@ -23,10 +23,26 @@ Analysis
 ----------
 
 cd /home/ubuntu/Energy_Conservation_Machine-Learning/services
+
+python daily_dump.py "2016-12-26"  2 | sort | grep -v all > /tmp/t.txt ; /home/ubuntu/spark-1.5.2-bin-hadoop2.6/bin/pyspark cluster-devices-daily.py /tmp/t.txt 2
 python daily_dump.py "2016-12-23"  > /tmp/1223.txt ;/home/ubuntu/spark-1.5.2-bin-hadoop2.6/bin/pyspark cluster-devices-daily.py /tmp/1223.txt 5
 
 python daily_dump.py "2016-11-30"  30 > /tmp/1130_30days.txt
-/home/ubuntu/spark-1.5.2-bin-hadoop2.6/bin/pyspark cluster-devices-daily.py /tmp/1130_30days.txt 5
+/home/ubuntu/spark-1.5.2-bin-hadoop2.6/bin/pyspark cluster-devices-daily.py  --driver-memory 1g  /tmp/1130_30days.txt 5
+
+Some devices whi are always on
+   1,1,1,1,1,1
+phon you see these kind of patterns:- hibernate
+   tphone: ,1,1,0,0,0,0,1,1,0,1,1,1
+   iphone: ,0,0,1,1,1,0
+Laptop: on/off for a period ??
+
+clustering intelligently
+  find off periods and clustering ? how ?
+
+
+mac turn off power saver: wake for network access
+                          enable power nap (keeps checking even in hibernate)
 
 Install
 ---------
@@ -171,28 +187,42 @@ Use this to remove:-
   db.device_names.find() 
   db.device_names.remove( {"_id": ObjectId("4d512b45cc9374271b02ec4f")});
   
+https://macvendors.com enter three chars to find vendor.
+
 db.device_names.deleteMany({})
 Use sort my MAC:- http://192.168.1.1/DHCPTable.asp
     db.device_names.insert( {"home_id" : "teja", 
-                            "00:6B:9E:4A:42:83":"visiotv_147",
-			    "00:BB:3A:11:E7:D5":"145",
-			    "192_168_1_137":"asus",
-			    "5C:F8:A1:6D:B7:EC":"chromebook",
-			    "64:BC:0C:67:97:BC":"tphonenexus",
-			    "6C:AD:F8:2B:AA:8D":"chromecast",
+
+			    "192_168_1_137":"allasus",
+			    "20:16:d8:15:94:66":"allasus",
+			    "6C:AD:F8:2B:AA:8D":"allchromecast",
+			    "C0:C1:C0:B2:BE:C4":"allrouter",
+			    "C0:56:27:B4:A5:79":"allwemotej",
 			    "80:56:F2:59:85:E2":"LAN_106",
-			    "94:94:26:95:12:0B":"iphone",
-			    "AC:BC:32:B4:01:27":"kmacpro",
-			    "B8:E8:56:43:49:08":"tmacair",
-			    "C0:56:27:B4:A5:79":"wemo",
-			    "C0:C1:C0:B2:BE:C4":"router",
-			    "C8:EB:8B:96:B6:34":"tabletidea",
+			    "14:91:82:C9:61:91":"allwemosuni",
+
+			    "64:BC:0C:67:97:BC":"tejphonenexus",
+			    "B8:E8:56:43:49:08":"tejmacair",
+			    "WeMo%20Insight":"tejlight",
+
+			    "94:94:26:95:12:0B":"kriphone",
+			    "AC:BC:32:B4:01:27":"krikmacpro",
+			    "C8:EB:8B:96:B6:34":"kritabletidea",
+                            "00:6B:9E:4A:42:83":"krivisiotv",
+
 			    "B8:8D:12:08:6E:98":"sunmacair",
-			    "AC:37:43:53:5E:C6":"abhphone"
+			    "00:BB:3A:11:E7:D5":"sunphone",
+			    "5C:F8:A1:6D:B7:EC":"sunchromebook",
+			    "WeMo%20Switch1":"sunlight",
+
+			    "AC:37:43:53:5E:C6":"abhphone",
+			    "78:4F:43:54:1C:36":"abhlaptop"
 			    }
 			    )
 
-00:18:61:2F:1C:72 oom a
+
+00:18:61:2F:1C:72 oom a 
+
 to delete or remove rols
 > db.device_stats.deleteMany({})
 { "acknowledged" : true, "deletedCount" : 875 }
@@ -986,6 +1016,7 @@ git init
 #git add README.md
 git status
 #git add .
+git add services/daily_dump.py services/cluster-devices-daily.py  junk_notes.xt services/cluster-devices.py  smart_home_app/static/test.html  smart_home_app/views.py 
 git commit -m "first commit"
 git remote add origin https://github.com/tejasvikothapalli/Energy_Conservation_Machine-Learning.git
 git push -u origin master

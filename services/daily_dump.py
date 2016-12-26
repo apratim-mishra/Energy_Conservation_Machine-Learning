@@ -40,10 +40,23 @@ for day_number in range(0,total_days):
                 max_minute_from_beginning_of_start_date = max(minute_from_beginning_of_start_date,max_minute_from_beginning_of_start_date)
                     
                 # GOOD debug
-                #print device + " " + hour + " minute_visibility:" + str(minute_visibility)  +  " minute_from_hour:" + str(minute_from_hour) + "  min_from_day_beg:" + str(minute_from_begining_of_day) + " day_number:" + str(day_number) + " min_from_start:" +str(minute_from_beginning_of_start_date) +  " =" + document['device_visibility'][device][minute_visibility]
+                # print device + " " + hour + " minute_visibility:" + str(minute_visibility)  +  " minute_from_hour:" + str(minute_from_hour) + "  min_from_day_beg:" + str(minute_from_begining_of_day) + " day_number:" + str(day_number) + " min_from_start:" +str(minute_from_beginning_of_start_date) +  " =" + document['device_visibility'][device][minute_visibility]
                 # TO verify: WeMo%20Insight 2016-12-02T23:00:00 minute_visibility:55 minute_from_hour:55  min_from_day_beg:1435 day_number:2 min_from_start:4315 =1
                 # print (datetime.datetime.strptime("2016-12-02T23:55:00", "%Y-%m-%dT%H:%M:%S")-datetime.datetime.strptime("2016-11-30", "%Y-%m-%d")).total_seconds()/60
                 # 4315.0
+
+out = '{:31}'.format("all#day:hr")
+
+
+for min  in range(0,max_minute_from_beginning_of_start_date):
+    curr_day = min/1440
+    curr_hour = (min%1440)/60
+    if min%60 == 0:
+        out = out + '{:2}'.format(curr_day) + ":" + '{:2}'.format(curr_hour)
+    else:
+        out = out + '{:5}'.format(min%60)
+
+print out
 
 for device in device_visibility_for_day:
     deviceName = device
@@ -51,8 +64,11 @@ for device in device_visibility_for_day:
         deviceName =  names[device] + device
     out = deviceName
 
+    # format  name in 31 chars
+    out = '{:31}'.format(deviceName)
+
     for min_of_day in range(0,max_minute_from_beginning_of_start_date):
-        out = out + "," + str(device_visibility_for_day[device].get(min_of_day, 0))
+        out = out + ",   " + str(device_visibility_for_day[device].get(min_of_day, 0))
     print out
 
 
