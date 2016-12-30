@@ -1,0 +1,47 @@
+<html>
+  <head>
+    <!--Load the AJAX API-->
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+    <script type="text/javascript">
+
+
+
+$(document).ready(function(){
+    $("#update_data").click(function(){
+       $("#daily_dump").html("Processing");
+       dailyDump()
+       
+    });
+
+});
+
+
+
+    function dailyDump()
+    {
+      url = "/smart_home_app/?op=daily_dump&day="+$("#day").val()+"&total_days="+$("#total_days").val()
+      var dailyDumpData = $.ajax({
+          url: url, 
+          async: false
+          }).responseText;
+
+      //alert(dailyDumpData);
+      //$("#daily_dump").html(dailyDumpData);
+      $("#daily_dump").html(dailyDumpData);
+    }
+   </script>
+  </head>
+
+  <body>
+    
+    Start day: <input type="text" id="day" value="2016-12-28"><br>
+    Total days: <input type="text" id="total_days" value="1"><br>
+    <button id="update_data">Refresh</button>
+
+
+    <p id="daily_dump">This is daily dump</p>
+
+
+  </body>
+</html>

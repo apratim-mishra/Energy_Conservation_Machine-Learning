@@ -45,16 +45,17 @@ for day_number in range(0,total_days):
                 # print (datetime.datetime.strptime("2016-12-02T23:55:00", "%Y-%m-%dT%H:%M:%S")-datetime.datetime.strptime("2016-11-30", "%Y-%m-%d")).total_seconds()/60
                 # 4315.0
 
-out = '{:31}'.format("all#day:hr")
+out = '{:31}'.format("1all#day:hr:min,")
 
 
 for min  in range(0,max_minute_from_beginning_of_start_date):
     curr_day = min/1440
     curr_hour = (min%1440)/60
-    if min%60 == 0:
-        out = out + '{:2}'.format(curr_day) + ":" + '{:2}'.format(curr_hour)
-    else:
-        out = out + '{:5}'.format(min%60)
+    out = out + '{:02d}'.format(curr_day) + ":" + '{:02d}'.format(curr_hour) + ":" + '{:02d}'.format(min%60) + ","
+    # if min%60 == 0:
+    #     out = out + '{:2}'.format(curr_day) + ":" + '{:2}'.format(curr_hour) + ","
+    # else:
+    #     out = out + '{:5}'.format(min%60) + ","
 
 print out
 
@@ -68,7 +69,7 @@ for device in device_visibility_for_day:
     out = '{:31}'.format(deviceName)
 
     for min_of_day in range(0,max_minute_from_beginning_of_start_date):
-        out = out + ",   " + str(device_visibility_for_day[device].get(min_of_day, 0))
+        out = out + ",       " + str(device_visibility_for_day[device].get(min_of_day, 0))
     print out
 
 

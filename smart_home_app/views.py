@@ -1,4 +1,5 @@
 from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from pymongo import MongoClient
@@ -16,6 +17,8 @@ def smart_home_api(request):
     # get a connection to our database
     dbconn = db.home_automation  # should be database name
     device_stats_collection = dbconn['device_stats']  # collection in DB
+
+        
 
 
     if request.method == 'GET' and request.GET['op'] == 'compute_clusters':
@@ -108,6 +111,32 @@ def smart_home_api(request):
             out =  out + "</table>"
             #print out
         return Response(out)
+
+    if request.method == 'GET' and request.GET['op'] == 'daily_dump':
+        day=request.GET['day'] # eg., "2016-08-20"
+        total_days=request.GET['total_days'] # eg., 1
+        cmd = "python /home/ubuntu/Energy_Conservation_Machine-Learning/services/daily_dump.py " + day + " " + total_days +  " | sort " 
+        print cmd
+        # p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()
+        # return Response(p)        
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+        out=p.stdout.read()
+        result = "<table>"
+
+        for line in out.splitlines():
+            result = result + "<tr>"
+            for cell in line.split(","):
+                if cell == "       0":
+                    cell = ""
+                result = result + "<td nowrap>" + cell + "</td>" 
+            result = result + "</tr>"
+
+        result = result +  "</table>"
+
+        #print result
+
+        #return HttpResponse(result, content_type='text/plain')
+        return Response(result)
 
     if request.method == 'GET' and request.GET['op'] == 'graph':
 
