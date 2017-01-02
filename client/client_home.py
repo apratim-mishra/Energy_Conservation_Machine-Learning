@@ -3,7 +3,11 @@ import requests
 import datetime
 import json
 import random
+import sys
 #import nmap
+import subprocess
+
+
 
 
 # in ubuntu: sudo apt-get install nmap
@@ -22,11 +26,32 @@ import random
 # ['192.168.1.1', '192.168.1.104', '192.168.1.106', '192.168.1.107', '192.168.1.109', '192.168.1.118', '192.168.1.119', '192.168.1.145', '192.168.1.146']
 
 
+def getNetworkAddress(interface):
+    cmd="ifconfig   " + interface
+    network_address = ""
+    ifconfig_out= subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
+    for line in ifconfig_out.splitlines():
+        if 'inet addr:' in line:
+            network_address =line.split(":")[1].split()[0]
+    return network_address + "/24"
 
-home_id = "teja"
+
+if len(sys.argv) != 2:
+    print "Usage: " + sys.argv[0] + " home_id"
+    sys.exit()
+
+home_id = sys.argv[1]
+#home_id = "teja"
+
+network_interface="wlan0"
+print getNetworkAddress(network_interface)
+
 network_addr_to_scan = "192.168.1.1/24"
+network_addr_to_scan = getNetworkAddress(network_interface)
+
 #url = "http://localhost:8000/smart_home_app/?"
-url = "http://54.201.150.12:8043/smart_home_app/?"
+#url = "http://54.201.150.12:8043/smart_home_app/?"
+url = "http://54.212.246.50:8043/smart_home_app/?"
 
 # sample document structure
 #task = {"home_id": home_id,
