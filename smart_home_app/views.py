@@ -9,6 +9,30 @@ import pymongo
 import subprocess
 from django.http import JsonResponse
 
+
+def read_device_analysis():
+    device_analysis_file = "/tmp/daily_devices_analysis.txt"
+    action_minute_device_dependant_device_map = {}
+    # read lines
+    # SIMILARACTION 1184 tejmacairB8:E8:56:43:49:08 tejlightWeMo%20Insight
+    
+    f = open(device_analysis_file, 'r') 
+    for line in f.readlines():
+        if 'SIMILARACTION' in line:
+            tokens = line.split()
+            minute = int(tokens[1])
+            device = tokens[2]
+            wemodevice = tokens[3]
+            if minute in action_minute_device_dependant_device_map:
+                pass
+            else:
+                action_minute_device_dependant_device_map[curr_minute] = {}
+
+            device_dependant_device_map = action_minute_device_dependant_device_map[curr_minute]                 
+            device_dependant_device_map[device] = wemodevice 
+
+    f.close()
+
 #@csrf_exempt
 @api_view(['GET', 'POST'])
 def smart_home_api(request):

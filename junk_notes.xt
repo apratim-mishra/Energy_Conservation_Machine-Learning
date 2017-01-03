@@ -19,6 +19,31 @@ curl "http://54.201.150.12:8043/smart_home_app/?op=compute_clusters&day=2016-07-
 - have invisibility also for clustering ???
 - find dependency: if phone come only then laptop and wemo light ??
 
+Good data "2016-12-28" 
+python /home/ubuntu/Energy_Conservation_Machine-Learning/services/daily_dump.py "2016-12-28" 1 > /tmp/daily.txt
+cat /tmp/daily.txt | grep -v day > /tmp/daily_devices.txt
+python /home/ubuntu/Energy_Conservation_Machine-Learning/services/algorithms.py /tmp/daily_devices.txt > /tmp/daily_devices_analysis.txt
+cat /tmp/daily_devices_analysis.txt  | grep ACTION
+
+
+
+- do combine to one script (easyly to run script after script)
+- print analysis
+    during interval wemolight1 state correlates to devices .  
+   every minute 
+    70 -> similar device-> wemolight1
+    71  
+    72
+- client actions
+  - if during the interval, check state of devices and turn on/off wemolight1
+
+- 
+
+- client enhancements
+   - start wemo server autmatically
+   - find list of wemos, by wemo status.
+   - issue with belkin switch need to turn off using app or switch only. not the 
+
 Analysis
 ----------
 
@@ -363,6 +388,18 @@ to delete or remove rols
 > db.device_clusters.deleteMany({})
 { "acknowledged" : true, "deletedCount" : 168 }
 > 
+
+14:91:82:C9:61:91 - belkin
+88:1F:A1:1E:E1:60 - apple
+78:4F:43:54:1C:36 - apple
+AC:BC:32:CF:21:3F - apple
+64:BC:0C:67:97:BC - LG
+B8:E8:56:43:49:08 - apple
+6C:B0:CE:38:38:AE- NETGEAR
+CC:3D:82:52:73:08 - Intel
+60:F1:89:7D:93:C3- Murata 
+
+***{"home_id": "kart", "device_visibility": {"14:91:82:C9:61:91": {"56": "1"}, "88:1F:A1:1E:E1:60": {"56": "1"}, "WeMo%20Switch1": {"56": "1"}, "78:4F:43:54:1C:36": {"56": "1"}, "AC:BC:32:CF:21:3F": {"56": "1"}, "64:BC:0C:67:97:BC": {"56": "1"}, "B8:E8:56:43:49:08": {"56": "1"}, "6C:B0:CE:38:38:AE": {"56": "1"}, "192_168_1_17": {"56": "1"}, "CC:3D:82:52:73:08": {"56": "1"}, "60:F1:89:7D:93:C3": {"56": "1"}}, "timestamp_hour": "2017-01-01T19:56:00"}***
 
 learning / services:-
 

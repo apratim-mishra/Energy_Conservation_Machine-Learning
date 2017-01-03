@@ -1,9 +1,11 @@
 import numpy as np
 import scipy
 import os
+import sys
 from sklearn.metrics.pairwise import cosine_similarity
 
 debug=0
+total_minutes=0
 
 def readfile(filename):
     f = open(filename, 'r')
@@ -12,6 +14,7 @@ def readfile(filename):
     for l in lines:
         elems = l.split(',')
         d[elems[0].strip()] = map(float, np.array(elems[1:]))
+
     return d
 
 def setInterval(d, interval):
@@ -110,13 +113,21 @@ def writeCosine(filename, dictionary, wemo):
         for device in dictionary:
             if device != w:
                 sim = cosine_similarity(dictionary[w], dictionary[device])[0][0]
-                arr.append((sim, str(w) + " " + str(device) + " : " + str(sim) + "\n"))
+                #arr.append((sim, str(w) + " " + str(device) + " : " + str(sim) + "\n"))
+                arr.append((sim,  str(device)))
     arr.sort(reverse=True, key=lambda x : x[0])    
     return arr
 
-device_visibility_by_minute = readfile("/tmp/dec2829.txt")
+if len(sys.argv) != 2:
+    print "Usage:" + sys.argv[0]  + " input_file" 
+
+input_file=sys.argv[1]
+#device_visibility_by_minute = readfile("/tmp/dec2829.txt")
+device_visibility_by_minute = readfile(input_file)
 #setInterval(device_visibility_by_minute, 1)
 interval=15
+action_minute_device_dependant_device_map = {}
+
 device_interval_visibility=getIntervals(device_visibility_by_minute, interval,["tejlightWeMo%20Insight", "sunlightWeMo%20Switch1"])
 
 print "Device Visibility interval:" + str(interval)
@@ -154,7 +165,31 @@ for transition_interval in transition_intervals:
     for entry in device_cosine_similarity:
         print " " + str(entry)
         
-        
+    device_similarity_threshold = 0.9
+
+    for entry in device_cosine_similarity:
+        device_similarity =  entry[0]
+        dependant_device = entry[1]
+        if device_similarity >= device_similarity_threshold:
+            for  curr_interval in range(transition_interval-min_intervals_for_transition, transition_interval+min_intervals_for_transition):
+                for curr_minute in range(curr_interval * interval, (curr_interval+1) * interval):
+                    if curr_minute in action_minute_device_dependant_device_map:
+                        pass
+                    else:
+                        action_minute_device_dependant_device_map[curr_minute] = {}
+                        action_minute_device_dependant_device_map[curr_minute][dependant_device] = device_name
+
+
+print "========================="
+total_minutes= len(device_visibility_by_minute[device_visibility_by_minute.keys()[0]])
+print "Every minute dependency results:  total_minutes:" + str(total_minutes)
+for curr_minute in range(0, total_minutes):
+    if curr_minute in action_minute_device_dependant_device_map:
+        device_dependant_device_map = action_minute_device_dependant_device_map[curr_minute]
+        for device in device_dependant_device_map:
+            print "Interval:" + str(curr_minute/interval) + " Start Min:" + str(curr_minute) + " Hr:" + str(curr_minute/60) + " min:" + str(curr_minute%60) + " " + device  +  " " + " controls " + device_dependant_device_map[device] + " visible:" + str(int(device_visibility_by_minute[device][curr_minute]))
+            print "SIMILARACTION " + str(curr_minute) + " " +  device  +  " " + device_dependant_device_map[device]
+    
     
 
 #writeCosine("cosine_similarity.txt", device_visibility_by_minute, ["tejlightWeMo%20Insight", "sunlightWeMo%20Switch1"])
