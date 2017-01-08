@@ -19,12 +19,21 @@ curl "http://54.201.150.12:8043/smart_home_app/?op=compute_clusters&day=2016-07-
 - have invisibility also for clustering ???
 - find dependency: if phone come only then laptop and wemo light ??
 
-Good data "2016-12-28" 
+Good data "2016-12-28"  and "2016-12-31": teja
 python /home/ubuntu/Energy_Conservation_Machine-Learning/services/daily_dump.py "2016-12-28" 1 > /tmp/daily.txt
 cat /tmp/daily.txt | grep -v day > /tmp/daily_devices.txt
 python /home/ubuntu/Energy_Conservation_Machine-Learning/services/algorithms.py /tmp/daily_devices.txt > /tmp/daily_devices_analysis.txt
 cat /tmp/daily_devices_analysis.txt  | grep ACTION
 
+kart:
+ubuntu@ip-172-31-41-212:~$ python /home/ubuntu/Energy_Conservation_Machine-Learning/services/daily_dump.py "2017-01-01" 1 > /tmp/daily.txt
+cat /tmp/daily.txt | grep -v day > /tmp/daily_devices.txt
+python /home/ubuntu/Energy_Conservation_Machine-Learning/services/algorithms.py /tmp/daily_devices.txt > /tmp/daily_devices_analysis.txt
+cat /tmp/daily_devices_analysis.txt  | grep ACTION
+
+ubuntu@ip-172-31-41-212:~$ SIMILARACTION 1155 CC:3D:82:52:73:08 WeMo%20Switch1
+SIMILARACTION 1156 CC:3D:82:52:73:08 WeMo%20Switch1
+SIMILARACTION 1157 CC:3D:82:52:73:08 WeMo%20Switch1
 
 
 - do combine to one script (easyly to run script after script)
@@ -1409,3 +1418,51 @@ The mac field is only populated when the overall program has been run as root.
 
 
 ============
+
+
+
+#
+# Perform action based on past analysis
+# min_of_day
+current_min_from_start_of_day=date_obj.hour*60 + date_obj.minute
+
+if current_min_from_start_of_day%120 ==0: # update past results every 2hrs
+    # call this periodically
+    read_device_analysis()
+
+if current_min_from_start_of_day in action_minute_device_dependant_device_map:
+    device_dependant_device_map = action_minute_device_dependant_device_map[current_min_from_start_of_day]
+    # tejmacairB8:E8:56:43:49:08
+    # Check the current device 
+    # At this minute in the past, see the the visibility of the device. Based on it turn off/on wemo.
+    for past_device in device_dependant_device_map:
+        is_past_device_visible_now=0
+        past_dependency_device = device_dependant_device_map[past_device]
+        for curr_visible_device in json_obj['device_visibility'].keys():
+            if past_device.find(curr_visible_device) != -1:
+                is_past_device_visible_now=1
+
+        if is_past_device_visible_now == 0:
+            response_string[past_dependency_device] = "switch off"
+        else:
+            response_string[past_dependency_device] = "switch on"
+                
+
+
+
+~/smart_home_app/test$ curl -X POST -d @device_stats_post.json "http://localhost:8043/smart_home_app/?"
+
+~/smart_home_app/test$ cat device_stats_post.json
+
+in /tmp/device...
+SIMILARACTION 1179 tejmacairB8:E8:56:43:49:08 tejlightWeMo%20Insight
+SIMILARACTION 1180 tejmacairB8:E8:56:43:49:08 tejlightWeMo%20Insight
+
+# test action: tejmacairB8:E8:56:43:49:08 is off
+{"home_id": "teja", "device_visibility": {"14:91:82:C9:61:91": {"14": "1"}, "C0:56:27:B4:A5:79": {"14": "1"}, "6C:AD:F8:2B:AA:8D": {"14": "1"}, "C0:C1:C0:B2:BE:C4": {"14": "1"}, "64:BC:0C:67:97:BC": {"14": "1"}, "192_168_1_137": {"14": "1"}, "94:94:26:95:12:0B": {"14": "1"}, "AC:BC:32:B4:01:27": {"14": "1"}, "00:BB:3A:11:E7:D5": {"14": "1"}, "00:6B:9E:4A:42:83": {"14": "1"}, "WeMo%20Insight": {"14": "1"}}, "timestamp_hour": "2017-12-30T19:39:00"}
+
+
+#Prime cache just for test
+{"home_id": "teja", "device_visibility": {"14:91:82:C9:61:91": {"14": "1"}, "C0:56:27:B4:A5:79": {"14": "1"}, "6C:AD:F8:2B:AA:8D": {"14": "1"}, "C0:C1:C0:B2:BE:C4": {"14": "1"}, "64:BC:0C:67:97:BC": {"14": "1"}, "192_168_1_137": {"14": "1"}, "94:94:26:95:12:0B": {"14": "1"}, "AC:BC:32:B4:01:27": {"14": "1"}, "00:BB:3A:11:E7:D5": {"14": "1"}, "00:6B:9E:4A:42:83": {"14": "1"}, "WeMo%20Insight": {"14": "1"}}, "timestamp_hour": "2017-12-30T16:00:00"}
+
+

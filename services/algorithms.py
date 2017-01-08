@@ -134,7 +134,12 @@ print "Device Visibility interval:" + str(interval)
 for device in device_interval_visibility:
     print str(device) + ":" + str(device_interval_visibility[device])
 
+# CHANGE 
+# For teja
 device_name = "tejlightWeMo%20Insight"
+# For kart
+device_name = "WeMo%20Switch1"
+
 min_intervals_for_transition = 2
 transition_intervals = findTransitionPointsForDevice(device_name, 
                                                      2, #min_intervals_for_transition, 

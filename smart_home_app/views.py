@@ -9,13 +9,17 @@ import pymongo
 import subprocess
 from django.http import JsonResponse
 
+action_minute_device_dependant_device_map={}
 
 def read_device_analysis():
     device_analysis_file = "/tmp/daily_devices_analysis.txt"
+    global action_minute_device_dependant_device_map
     action_minute_device_dependant_device_map = {}
     # read lines
     # SIMILARACTION 1184 tejmacairB8:E8:56:43:49:08 tejlightWeMo%20Insight
-    
+
+    print "reading processing" + device_analysis_file
+
     f = open(device_analysis_file, 'r') 
     for line in f.readlines():
         if 'SIMILARACTION' in line:
@@ -26,9 +30,9 @@ def read_device_analysis():
             if minute in action_minute_device_dependant_device_map:
                 pass
             else:
-                action_minute_device_dependant_device_map[curr_minute] = {}
+                action_minute_device_dependant_device_map[minute] = {}
 
-            device_dependant_device_map = action_minute_device_dependant_device_map[curr_minute]                 
+            device_dependant_device_map = action_minute_device_dependant_device_map[minute]
             device_dependant_device_map[device] = wemodevice 
 
     f.close()
@@ -294,25 +298,58 @@ def smart_home_api(request):
                                      {"$set": device_visibility_upsert_set},
                                      upsert=True)
 
+        # Turn off using K-means cluster
         # import pdb; pdb.set_trace() 
         # import rpdb; rpdb.set_trace()
-        device_clusters_collection = dbconn['device_clusters']  # collection in DB
-        device_custers_obj = device_clusters_collection.find_one({"weekday_hour" : weekday_hour})
-        if device_custers_obj is not None:
+        # device_clusters_collection = dbconn['device_clusters']  # collection in DB
+        # device_custers_obj = device_clusters_collection.find_one({"weekday_hour" : weekday_hour})
+        # if device_custers_obj is not None:
+        #     response_string = {"ok": "true"}
+        #     # check if the device is on the old training data at the same minute
+        #     for device in json_obj['device_visibility'].keys():
+        #         for minute in json_obj['device_visibility'][device].keys():
+
+        #             if device in  device_custers_obj['device_visibility_by_minute']:
+        #                 # import rpdb; rpdb.set_trace()
+        #                 int_minute = int(minute)
+        #                 device_minute_value = device_visibility[device][minute]
+        #                 past_device_minute_value = device_custers_obj['device_visibility_by_minute'][device][int_minute] ## BUG if int_minute is 60 ??? 59 ??
+        #                 if int(device_minute_value) == 1 and past_device_minute_value == 0:
+        #                     response_string[str(device)] = "switch off"
+
+        #     return Response(response_string)
+
+        #
+        # Perform action based on past analysis
+        # min_of_day
+        current_min_from_start_of_day=date_obj.hour*60 + date_obj.minute
+
+        if current_min_from_start_of_day%120 ==0: # update past results every 2hrs
+            # call this periodically
+            read_device_analysis()
+
+        read_device_analysis() # remove this TODO
+        if current_min_from_start_of_day in action_minute_device_dependant_device_map:
+            #import rpdb; rpdb.set_trace()
             response_string = {"ok": "true"}
-            # check if the device is on the old training data at the same minute
-            for device in json_obj['device_visibility'].keys():
-                for minute in json_obj['device_visibility'][device].keys():
+            device_dependant_device_map = action_minute_device_dependant_device_map[current_min_from_start_of_day]
+            # tejmacairB8:E8:56:43:49:08
+            # Check the current device 
+            # At this minute in the past, see the the visibility of the device. Based on it turn off/on wemo.
+            for past_device in device_dependant_device_map:
+                is_past_device_visible_now=0
+                past_dependency_device = device_dependant_device_map[past_device]
+                for curr_visible_device in json_obj['device_visibility'].keys():
+                    if past_device.find(curr_visible_device) != -1:
+                        is_past_device_visible_now=1
 
-                    if device in  device_custers_obj['device_visibility_by_minute']:
-                        # import rpdb; rpdb.set_trace()
-                        int_minute = int(minute)
-                        device_minute_value = device_visibility[device][minute]
-                        past_device_minute_value = device_custers_obj['device_visibility_by_minute'][device][int_minute] ## BUG if int_minute is 60 ??? 59 ??
-                        if int(device_minute_value) == 1 and past_device_minute_value == 0:
-                            response_string[str(device)] = "switch off"
+                if is_past_device_visible_now == 0:
+                    response_string[past_dependency_device] = "switch off"
+                else:
+                    response_string[past_dependency_device] = "switch on"
 
-            return Response(response_string)
+                return Response(response_string)
+                
 
         return Response({"ok": "true"})
 

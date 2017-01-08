@@ -11,7 +11,9 @@ total_days=10
 if len(sys.argv) == 3: 
     total_days=int(sys.argv[2])
 #print "total_days:" + str(total_days)
-home_id="teja"
+#home_id="teja"
+home_id="kart"
+
 device_visibility_for_day={}
 max_minute_from_beginning_of_start_date=0
 
@@ -61,8 +63,10 @@ print out
 
 for device in device_visibility_for_day:
     deviceName = device
-    if device in names:
-        deviceName =  names[device] + device
+
+    if names is not None:
+        if device in names:
+            deviceName =  names[device] + device
     out = deviceName
 
     # format  name in 31 chars
