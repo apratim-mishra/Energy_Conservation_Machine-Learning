@@ -7,6 +7,7 @@ import json
 import datetime
 import pymongo
 import subprocess
+import sys
 from django.http import JsonResponse
 
 action_minute_device_dependant_device_map={}
@@ -20,7 +21,12 @@ def read_device_analysis():
 
     print "reading processing" + device_analysis_file
 
-    f = open(device_analysis_file, 'r') 
+    try:
+        f = open(device_analysis_file, 'r') 
+    except:
+        print "unable to open " + device_analysis_file
+        return 
+
     for line in f.readlines():
         if 'SIMILARACTION' in line:
             tokens = line.split()
@@ -141,14 +147,30 @@ def smart_home_api(request):
         return Response(out)
 
     if request.method == 'GET' and request.GET['op'] == 'daily_dump':
+        print >> sys.stderr,  "daily_dump STARTED"
         day=request.GET['day'] # eg., "2016-08-20"
         total_days=request.GET['total_days'] # eg., 1
-        cmd = "python /home/ubuntu/Energy_Conservation_Machine-Learning/services/daily_dump.py " + day + " " + total_days +  " | sort " 
-        print cmd
+        home_id=request.GET['home_id'] # eg., teja
+
+        # clear old files
+        cmd="/bin/rm /tmp/daily.txt tmp/daily_devices.txt /tmp/daily_devices_analysis.txt /home/ubuntu/Energy_Conservation_Machine-Learning/smart_home_app/static/daily.png"
+        print >> sys.stderr,  cmd
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+        out=p.stdout.read()
+
+        cmd = "python /home/ubuntu/Energy_Conservation_Machine-Learning/services/daily_dump.py " + day + " " + total_days +  " " + home_id +  " | sort > /tmp/daily.txt" 
+        print "cmd:" + cmd
+        print >> sys.stderr,  cmd
         # p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()
         # return Response(p)        
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
         out=p.stdout.read()
+
+        cmd = "cat  /tmp/daily.txt" 
+        print >> sys.stderr,  cmd
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+        out=p.stdout.read()
+
         result = "<table>"
 
         for line in out.splitlines():
@@ -164,7 +186,30 @@ def smart_home_api(request):
         #print result
 
         #return HttpResponse(result, content_type='text/plain')
+        print >> sys.stderr,  "daily_dump COMPLETED"
         return Response(result)
+
+    if request.method == 'GET' and request.GET['op'] == 'analysis_cosine':
+        print >> sys.stderr,  "analysis_cosine STARTED"
+        day=request.GET['day'] # eg., "2016-08-20"
+        total_days=request.GET['total_days'] # eg., 1
+        home_id=request.GET['home_id'] # eg., teja
+        cmd = "cat /tmp/daily.txt | grep -v day > /tmp/daily_devices.txt; python /home/ubuntu/Energy_Conservation_Machine-Learning/services/algorithms.py /tmp/daily_devices.txt "  + home_id 
+        print >> sys.stderr,  cmd
+        # p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()
+        # return Response(p)        
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+        out=p.stdout.read()
+        result = ""
+
+        for line in out.splitlines():
+            result = result + line + "<br/>"
+
+        #return HttpResponse(result, content_type='text/plain')
+        #print result
+        print >> sys.stderr,  "analysis_cosine COMPLETED"
+        return Response(result)
+
 
     if request.method == 'GET' and request.GET['op'] == 'graph':
 
@@ -328,7 +373,7 @@ def smart_home_api(request):
             # call this periodically
             read_device_analysis()
 
-        read_device_analysis() # remove this TODO
+        #read_device_analysis() # remove this TODO
         if current_min_from_start_of_day in action_minute_device_dependant_device_map:
             #import rpdb; rpdb.set_trace()
             response_string = {"ok": "true"}

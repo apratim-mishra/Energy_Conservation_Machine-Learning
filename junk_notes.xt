@@ -1,4 +1,17 @@
 
+Analysis:-
+----------
+Find transition points for wemo (controllable switches)
+Find similar devices based on transitions (over multiple days).
+Switch off wemo when none of the divices are visibles.(simple rules add in client) on off day.
+   Cool off period 1 hr after switching off.
+For experiment Learn one day(odd days), actions even day (continous learning)
+Energy usage of odd days and even days. Energy saving stats.
+
+Questions:
+ Sensors not effective when persorn is leeping
+ learning errors: fixed by cooiling perions.
+
 Tasks
 --------
 - run spark nightly
@@ -20,21 +33,33 @@ curl "http://54.201.150.12:8043/smart_home_app/?op=compute_clusters&day=2016-07-
 - find dependency: if phone come only then laptop and wemo light ??
 
 Good data "2016-12-28"  and "2016-12-31": teja
-python /home/ubuntu/Energy_Conservation_Machine-Learning/services/daily_dump.py "2016-12-28" 1 > /tmp/daily.txt
+  2017-02-7 good
+  2017-02-8 bad no transition
+    2017-02-9 good
+   2017-02-10 good
+   2017-02-11 half 
+   2017-02-12 half 
+   2017-02-15 good
+   2017-02-16 good
+   2017-02-17 half
+python /home/ubuntu/Energy_Conservation_Machine-Learning/services/daily_dump.py "2017-02-12" 1 teja > /tmp/daily.txt
 cat /tmp/daily.txt | grep -v day > /tmp/daily_devices.txt
-python /home/ubuntu/Energy_Conservation_Machine-Learning/services/algorithms.py /tmp/daily_devices.txt > /tmp/daily_devices_analysis.txt
+python /home/ubuntu/Energy_Conservation_Machine-Learning/services/algorithms.py /tmp/daily_devices.txt teja> /tmp/daily_devices_analysis.txt
 cat /tmp/daily_devices_analysis.txt  | grep ACTION
 
-kart:
-ubuntu@ip-172-31-41-212:~$ python /home/ubuntu/Energy_Conservation_Machine-Learning/services/daily_dump.py "2017-01-01" 1 > /tmp/daily.txt
+kart: "2017-01-01" or 2017-01-03 GOOD ?  - till 2017-01-087
+ubuntu@ip-172-31-41-212:~$ 
+python /home/ubuntu/Energy_Conservation_Machine-Learning/services/daily_dump.py "2017-01-01" 1 kart> /tmp/daily.txt
 cat /tmp/daily.txt | grep -v day > /tmp/daily_devices.txt
-python /home/ubuntu/Energy_Conservation_Machine-Learning/services/algorithms.py /tmp/daily_devices.txt > /tmp/daily_devices_analysis.txt
+python /home/ubuntu/Energy_Conservation_Machine-Learning/services/algorithms.py /tmp/daily_devices.txt kart> /tmp/daily_devices_analysis.txt
 cat /tmp/daily_devices_analysis.txt  | grep ACTION
 
 ubuntu@ip-172-31-41-212:~$ SIMILARACTION 1155 CC:3D:82:52:73:08 WeMo%20Switch1
 SIMILARACTION 1156 CC:3D:82:52:73:08 WeMo%20Switch1
 SIMILARACTION 1157 CC:3D:82:52:73:08 WeMo%20Switch1
 
+54.212.246.50:8043/
+http://54.212.246.50:8043/static/analysis.html
 
 - do combine to one script (easyly to run script after script)
 - print analysis
@@ -92,6 +117,7 @@ similarity (Cosine)
 Decision trees
 Naive bases
 K means around transition data? 2 clusters
+Markov Chains
 
 
 
@@ -292,6 +318,16 @@ client:-
 
   cd ~/smart_home_app/client/
 
+For energy:-
+
+while [ 1 ]
+do
+    date
+    curl http://localhost:5000/api/environment
+    sleep 120
+done
+
+# client connection
 sudo bash
 while [ 1 ]
 do
@@ -312,9 +348,11 @@ done
 webserver:
   (with in screen)
   cd ~/Energy_Conservation_Machine-Learning
+  
+   python manage.py runserver 0.0.0.0:8043 >> logs.txt  
   #python manage.py runserver 0.0.0.0:8043
   #nohup python manage.py runserver 0.0.0.0:8043&
-  nohup python manage.py runserver 0.0.0.0:8043 > /dev/null 2>&1 &
+  #nohup python manage.py runserver 0.0.0.0:8043 > /dev/null 2>&1 &
   
 
   logs: 2016-02-07T19:00:00 weekday_hour:weekday6-19hour
@@ -1466,3 +1504,57 @@ SIMILARACTION 1180 tejmacairB8:E8:56:43:49:08 tejlightWeMo%20Insight
 {"home_id": "teja", "device_visibility": {"14:91:82:C9:61:91": {"14": "1"}, "C0:56:27:B4:A5:79": {"14": "1"}, "6C:AD:F8:2B:AA:8D": {"14": "1"}, "C0:C1:C0:B2:BE:C4": {"14": "1"}, "64:BC:0C:67:97:BC": {"14": "1"}, "192_168_1_137": {"14": "1"}, "94:94:26:95:12:0B": {"14": "1"}, "AC:BC:32:B4:01:27": {"14": "1"}, "00:BB:3A:11:E7:D5": {"14": "1"}, "00:6B:9E:4A:42:83": {"14": "1"}, "WeMo%20Insight": {"14": "1"}}, "timestamp_hour": "2017-12-30T16:00:00"}
 
 
+
+
+========================
+
+python plot graphs
+http://matplotlib.org/gallery.html
+
+http://matplotlib.org/examples/lines_bars_and_markers/marker_fillstyle_reference.html
+
+sudo apt-get install python-matplotlib
+
+http://matplotlib.org/2.0.0b2/examples/lines_bars_and_markers/line_demo_dash_control.html
+
+http://stackoverflow.com/questions/21519203/plotting-a-list-of-x-y-coordinates-in-python-matplotlib
+
+
+
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+#plt.plot([1,2,3])
+x=[10]
+y=[1]
+plt.scatter(x, y)
+
+x=[100]
+y=[1]
+plt.scatter(x, y)
+
+x=[1600]
+y=[5]
+plt.scatter(x, y)
+
+plt.axis([0, 1600, 0, 20]) # xmin, xmax, ymin, ymax
+
+y=[1,5,6]
+ylabels=["a", "b", "c"]
+plt.yticks(y, ylabels)
+plt.xlabel("Time (minute of the day) ")
+plt.savefig('myfig')
+
+
+
+===============================
+
+tunnel
+
+
+in client:
+ssh -o TCPKeepAlive=yes -o ServerAliveInterval=50 -R 44444:localhost:22 -i "tejasvideca.pem.txt" ubuntu@xxxxx  -l ubuntu
+
+login to server 
+ssh -l tejasvi -p 44444 localhost
+========================================

@@ -52,6 +52,11 @@ def getIntervals(device_min_visibility, interval, wemo):
 
             
 def findTransitionPointsForDevice(device_name, min_intervals_for_transition, device_interval_visibility):        
+    if device_name in device_interval_visibility:
+        pass
+    else:
+        return
+        
     device_visibility_array = device_interval_visibility[device_name]
     transition_intervals = [] 
     for interval in range(0,len(device_visibility_array)):
@@ -107,6 +112,57 @@ def OLDwriteCosine(filename, dictionary, wemo):
         f.write(e[1])
     
 
+def plotDeviceInterval(device_interval_visibility):
+    #
+    # plot graph
+    #
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+
+    plt.axis([0, max_minute_from_beginning_of_start_date, 0, len(device_visibility_for_day)+1]) # xmin, xmax, ymin, ymax
+
+    device_number=1
+    y_number=[]
+    y_ticks=[]
+    for device in device_interval_visibility:
+        deviceName = device
+
+        if names is not None:
+            if device in names:
+                deviceName =  names[device] + device
+
+        y_number.append(device_number)
+        y_ticks.append(deviceName)
+        for min_of_day in range(0,max_minute_from_beginning_of_start_date):
+            if device_visibility_for_day[device].get(min_of_day, 0) != 0:
+                plt.scatter(min_of_day, device_number)
+                # 
+                # print "plt: (" + str(min_of_day) + "," + str(device_number) + ")"
+
+        device_number = device_number+1
+
+    plt.xlabel("Time (minute of the day) ")
+    plt.yticks(y_number, y_ticks)
+    # We change the fontsize of minor ticks label 
+    #plt.rcParams['ytick.labelsize'] = 8
+    #plt.tick_params(axis='both', which='minor', labelsize=8)
+    # We change the fontsize of minor ticks label 
+    plt.tick_params(axis='both', which='major', labelsize=8)
+    plt.tick_params(axis='both', which='minor', labelsize=6)
+
+    #This makes the figure's width  inches, and its height  inches.
+    plt.rcParams['figure.figsize'] = 40, 10
+    # adjust margins NOT WORKING
+    #plt.subplots_adjust(left=100, bottom=0, right=101, top=1, wspace=0, hspace=0)
+    # Tweak spacing to prevent clipping of tick-labels
+    plt.subplots_adjust(left=0.25)
+
+    plt.savefig('/tmp/daily')
+    plt.close()
+
+
+
 def writeCosine(filename, dictionary, wemo):
     arr = []
     for w in wemo:
@@ -118,10 +174,12 @@ def writeCosine(filename, dictionary, wemo):
     arr.sort(reverse=True, key=lambda x : x[0])    
     return arr
 
-if len(sys.argv) != 2:
-    print "Usage:" + sys.argv[0]  + " input_file" 
+if len(sys.argv) != 3:
+    print "Usage:" + sys.argv[0]  + " input_file"  + " home_id"
 
 input_file=sys.argv[1]
+home_id=sys.argv[2]
+
 #device_visibility_by_minute = readfile("/tmp/dec2829.txt")
 device_visibility_by_minute = readfile(input_file)
 #setInterval(device_visibility_by_minute, 1)
@@ -134,19 +192,30 @@ print "Device Visibility interval:" + str(interval)
 for device in device_interval_visibility:
     print str(device) + ":" + str(device_interval_visibility[device])
 
+
+
+
+
 # CHANGE 
 # For teja
-device_name = "tejlightWeMo%20Insight"
-# For kart
-device_name = "WeMo%20Switch1"
+if home_id == "kart":
+    # For kart
+    device_name = "WeMo%20Switch1"
+else:
+    device_name = "tejlightWeMo%20Insight"
 
 min_intervals_for_transition = 2
+print str(device_interval_visibility)
 transition_intervals = findTransitionPointsForDevice(device_name, 
                                                      2, #min_intervals_for_transition, 
                                                      device_interval_visibility)
 
 print "Transition points:" + device_name
 print transition_intervals
+
+if transition_intervals is None or len(transition_intervals) == 0 :
+    print "ZERO TRANSITION POINTS"
+    sys.exit(0)
 
 for transition_interval in transition_intervals:
     device_visibility_near_transition = {}
