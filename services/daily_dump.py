@@ -8,10 +8,17 @@ dbconn = db.home_automation  # should be database name
 #start_date="2016-12-17" 
 start_date=sys.argv[1]
 total_days=10
+#home_id="teja"
+home_id="kart"
+
 if len(sys.argv) == 3: 
     total_days=int(sys.argv[2])
+if len(sys.argv) == 4: 
+    total_days=int(sys.argv[2])
+    home_id=sys.argv[3]
+
 #print "total_days:" + str(total_days)
-home_id="teja"
+
 device_visibility_for_day={}
 max_minute_from_beginning_of_start_date=0
 
@@ -61,8 +68,10 @@ print out
 
 for device in device_visibility_for_day:
     deviceName = device
-    if device in names:
-        deviceName =  names[device] + device
+
+    if names is not None:
+        if device in names:
+            deviceName =  names[device] + device
     out = deviceName
 
     # format  name in 31 chars
@@ -72,5 +81,57 @@ for device in device_visibility_for_day:
         out = out + ",       " + str(device_visibility_for_day[device].get(min_of_day, 0))
     print out
 
+
+# do this for web UI Access otherwise . web will not have data.
+sys.exit(0)
+
+#
+# plot graph
+#
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
+plt.axis([0, max_minute_from_beginning_of_start_date, 0, len(device_visibility_for_day)+1]) # xmin, xmax, ymin, ymax
+
+device_number=1
+y_number=[]
+y_ticks=[]
+for device in device_visibility_for_day:
+    deviceName = device
+
+    if names is not None:
+        if device in names:
+            deviceName =  names[device] + device
+
+    y_number.append(device_number)
+    y_ticks.append(deviceName)
+    for min_of_day in range(0,max_minute_from_beginning_of_start_date):
+        if device_visibility_for_day[device].get(min_of_day, 0) != 0:
+            plt.scatter(min_of_day, device_number)
+            # 
+            # print "plt: (" + str(min_of_day) + "," + str(device_number) + ")"
+
+    device_number = device_number+1
+
+plt.xlabel("Time (minute of the day) ")
+plt.yticks(y_number, y_ticks)
+# We change the fontsize of minor ticks label 
+#plt.rcParams['ytick.labelsize'] = 8
+#plt.tick_params(axis='both', which='minor', labelsize=8)
+# We change the fontsize of minor ticks label 
+plt.tick_params(axis='both', which='major', labelsize=8)
+plt.tick_params(axis='both', which='minor', labelsize=6)
+
+#This makes the figure's width  inches, and its height  inches.
+plt.rcParams['figure.figsize'] = 40, 10
+# adjust margins NOT WORKING
+#plt.subplots_adjust(left=100, bottom=0, right=101, top=1, wspace=0, hspace=0)
+# Tweak spacing to prevent clipping of tick-labels
+plt.subplots_adjust(left=0.25)
+
+#plt.savefig('/tmp/daily')
+plt.savefig('/home/ubuntu/Energy_Conservation_Machine-Learning/smart_home_app/static/daily')
+plt.close()
 
 

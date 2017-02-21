@@ -11,6 +11,7 @@ $(document).ready(function(){
     $("#update_data").click(function(){
        $("#daily_dump").html("Processing");
        dailyDump()
+       cosineAnalysisDump()
        
     });
 
@@ -20,7 +21,7 @@ $(document).ready(function(){
 
     function dailyDump()
     {
-      url = "/smart_home_app/?op=daily_dump&day="+$("#day").val()+"&total_days="+$("#total_days").val()
+      url = "/smart_home_app/?op=daily_dump&day="+$("#day").val()+"&total_days="+$("#total_days").val()+"&home_id="+$("#home_id").val()
       var dailyDumpData = $.ajax({
           url: url, 
           async: false
@@ -29,18 +30,42 @@ $(document).ready(function(){
       //alert(dailyDumpData);
       //$("#daily_dump").html(dailyDumpData);
       $("#daily_dump").html(dailyDumpData);
+      d = new Date();
+      $("#myimg").attr("src", "/static/daily.png?"+d.getTime());
+      return dailyDumpData;
     }
+
+    function cosineAnalysisDump()
+    {
+      url = "/smart_home_app/?op=analysis_cosine&day="+$("#day").val()+"&total_days="+$("#total_days").val()+"&home_id="+$("#home_id").val()
+      var dailyDumpData = $.ajax({
+          url: url, 
+          async: false
+          }).responseText;
+
+      $("#analysis_cosine_dump").html(dailyDumpData);
+      return dailyDumpData;
+    }
+
    </script>
   </head>
 
   <body>
     
-    Start day: <input type="text" id="day" value="2016-12-28"><br>
+    Start day: <input type="text" id="day" value="2017-02-16"><br>
     Total days: <input type="text" id="total_days" value="1"><br>
+    home id: <input type="text" id="home_id" value="teja"><br>
+
     <button id="update_data">Refresh</button>
 
 
     <p id="daily_dump">This is daily dump</p>
+
+    <p id="analysis_cosine_dump">This is cosine analysis dump</p>
+
+
+    Image: 
+     <img src="" id="myimg">
 
 
   </body>

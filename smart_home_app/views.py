@@ -7,7 +7,41 @@ import json
 import datetime
 import pymongo
 import subprocess
+import sys
 from django.http import JsonResponse
+
+action_minute_device_dependant_device_map={}
+
+def read_device_analysis():
+    device_analysis_file = "/tmp/daily_devices_analysis.txt"
+    global action_minute_device_dependant_device_map
+    action_minute_device_dependant_device_map = {}
+    # read lines
+    # SIMILARACTION 1184 tejmacairB8:E8:56:43:49:08 tejlightWeMo%20Insight
+
+    print "reading processing" + device_analysis_file
+
+    try:
+        f = open(device_analysis_file, 'r') 
+    except:
+        print "unable to open " + device_analysis_file
+        return 
+
+    for line in f.readlines():
+        if 'SIMILARACTION' in line:
+            tokens = line.split()
+            minute = int(tokens[1])
+            device = tokens[2]
+            wemodevice = tokens[3]
+            if minute in action_minute_device_dependant_device_map:
+                pass
+            else:
+                action_minute_device_dependant_device_map[minute] = {}
+
+            device_dependant_device_map = action_minute_device_dependant_device_map[minute]
+            device_dependant_device_map[device] = wemodevice 
+
+    f.close()
 
 #@csrf_exempt
 @api_view(['GET', 'POST'])
@@ -113,14 +147,30 @@ def smart_home_api(request):
         return Response(out)
 
     if request.method == 'GET' and request.GET['op'] == 'daily_dump':
+        print >> sys.stderr,  "daily_dump STARTED"
         day=request.GET['day'] # eg., "2016-08-20"
         total_days=request.GET['total_days'] # eg., 1
-        cmd = "python /home/ubuntu/Energy_Conservation_Machine-Learning/services/daily_dump.py " + day + " " + total_days +  " | sort " 
-        print cmd
+        home_id=request.GET['home_id'] # eg., teja
+
+        # clear old files
+        cmd="/bin/rm /tmp/daily.txt tmp/daily_devices.txt /tmp/daily_devices_analysis.txt /home/ubuntu/Energy_Conservation_Machine-Learning/smart_home_app/static/daily.png"
+        print >> sys.stderr,  cmd
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+        out=p.stdout.read()
+
+        cmd = "python /home/ubuntu/Energy_Conservation_Machine-Learning/services/daily_dump.py " + day + " " + total_days +  " " + home_id +  " | sort > /tmp/daily.txt" 
+        print "cmd:" + cmd
+        print >> sys.stderr,  cmd
         # p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()
         # return Response(p)        
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
         out=p.stdout.read()
+
+        cmd = "cat  /tmp/daily.txt" 
+        print >> sys.stderr,  cmd
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+        out=p.stdout.read()
+
         result = "<table>"
 
         for line in out.splitlines():
@@ -136,7 +186,30 @@ def smart_home_api(request):
         #print result
 
         #return HttpResponse(result, content_type='text/plain')
+        print >> sys.stderr,  "daily_dump COMPLETED"
         return Response(result)
+
+    if request.method == 'GET' and request.GET['op'] == 'analysis_cosine':
+        print >> sys.stderr,  "analysis_cosine STARTED"
+        day=request.GET['day'] # eg., "2016-08-20"
+        total_days=request.GET['total_days'] # eg., 1
+        home_id=request.GET['home_id'] # eg., teja
+        cmd = "cat /tmp/daily.txt | grep -v day > /tmp/daily_devices.txt; python /home/ubuntu/Energy_Conservation_Machine-Learning/services/algorithms.py /tmp/daily_devices.txt "  + home_id 
+        print >> sys.stderr,  cmd
+        # p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()
+        # return Response(p)        
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+        out=p.stdout.read()
+        result = ""
+
+        for line in out.splitlines():
+            result = result + line + "<br/>"
+
+        #return HttpResponse(result, content_type='text/plain')
+        #print result
+        print >> sys.stderr,  "analysis_cosine COMPLETED"
+        return Response(result)
+
 
     if request.method == 'GET' and request.GET['op'] == 'graph':
 
@@ -270,25 +343,58 @@ def smart_home_api(request):
                                      {"$set": device_visibility_upsert_set},
                                      upsert=True)
 
+        # Turn off using K-means cluster
         # import pdb; pdb.set_trace() 
         # import rpdb; rpdb.set_trace()
-        device_clusters_collection = dbconn['device_clusters']  # collection in DB
-        device_custers_obj = device_clusters_collection.find_one({"weekday_hour" : weekday_hour})
-        if device_custers_obj is not None:
+        # device_clusters_collection = dbconn['device_clusters']  # collection in DB
+        # device_custers_obj = device_clusters_collection.find_one({"weekday_hour" : weekday_hour})
+        # if device_custers_obj is not None:
+        #     response_string = {"ok": "true"}
+        #     # check if the device is on the old training data at the same minute
+        #     for device in json_obj['device_visibility'].keys():
+        #         for minute in json_obj['device_visibility'][device].keys():
+
+        #             if device in  device_custers_obj['device_visibility_by_minute']:
+        #                 # import rpdb; rpdb.set_trace()
+        #                 int_minute = int(minute)
+        #                 device_minute_value = device_visibility[device][minute]
+        #                 past_device_minute_value = device_custers_obj['device_visibility_by_minute'][device][int_minute] ## BUG if int_minute is 60 ??? 59 ??
+        #                 if int(device_minute_value) == 1 and past_device_minute_value == 0:
+        #                     response_string[str(device)] = "switch off"
+
+        #     return Response(response_string)
+
+        #
+        # Perform action based on past analysis
+        # min_of_day
+        current_min_from_start_of_day=date_obj.hour*60 + date_obj.minute
+
+        if current_min_from_start_of_day%120 ==0: # update past results every 2hrs
+            # call this periodically
+            read_device_analysis()
+
+        #read_device_analysis() # remove this TODO
+        if current_min_from_start_of_day in action_minute_device_dependant_device_map:
+            #import rpdb; rpdb.set_trace()
             response_string = {"ok": "true"}
-            # check if the device is on the old training data at the same minute
-            for device in json_obj['device_visibility'].keys():
-                for minute in json_obj['device_visibility'][device].keys():
+            device_dependant_device_map = action_minute_device_dependant_device_map[current_min_from_start_of_day]
+            # tejmacairB8:E8:56:43:49:08
+            # Check the current device 
+            # At this minute in the past, see the the visibility of the device. Based on it turn off/on wemo.
+            for past_device in device_dependant_device_map:
+                is_past_device_visible_now=0
+                past_dependency_device = device_dependant_device_map[past_device]
+                for curr_visible_device in json_obj['device_visibility'].keys():
+                    if past_device.find(curr_visible_device) != -1:
+                        is_past_device_visible_now=1
 
-                    if device in  device_custers_obj['device_visibility_by_minute']:
-                        # import rpdb; rpdb.set_trace()
-                        int_minute = int(minute)
-                        device_minute_value = device_visibility[device][minute]
-                        past_device_minute_value = device_custers_obj['device_visibility_by_minute'][device][int_minute] ## BUG if int_minute is 60 ??? 59 ??
-                        if int(device_minute_value) == 1 and past_device_minute_value == 0:
-                            response_string[str(device)] = "switch off"
+                if is_past_device_visible_now == 0:
+                    response_string[past_dependency_device] = "switch off"
+                else:
+                    response_string[past_dependency_device] = "switch on"
 
-            return Response(response_string)
+                return Response(response_string)
+                
 
         return Response({"ok": "true"})
 

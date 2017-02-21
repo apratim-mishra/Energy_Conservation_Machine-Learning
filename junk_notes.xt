@@ -1,4 +1,17 @@
 
+Analysis:-
+----------
+Find transition points for wemo (controllable switches)
+Find similar devices based on transitions (over multiple days).
+Switch off wemo when none of the divices are visibles.(simple rules add in client) on off day.
+   Cool off period 1 hr after switching off.
+For experiment Learn one day(odd days), actions even day (continous learning)
+Energy usage of odd days and even days. Energy saving stats.
+
+Questions:
+ Sensors not effective when persorn is leeping
+ learning errors: fixed by cooiling perions.
+
 Tasks
 --------
 - run spark nightly
@@ -18,6 +31,52 @@ curl "http://54.201.150.12:8043/smart_home_app/?op=compute_clusters&day=2016-07-
    2016-12-08 2016-12-09 12-10 12-7
 - have invisibility also for clustering ???
 - find dependency: if phone come only then laptop and wemo light ??
+
+Good data "2016-12-28"  and "2016-12-31": teja
+  2017-02-7 good
+  2017-02-8 bad no transition
+    2017-02-9 good
+   2017-02-10 good
+   2017-02-11 half 
+   2017-02-12 half 
+   2017-02-15 good
+   2017-02-16 good
+   2017-02-17 half
+python /home/ubuntu/Energy_Conservation_Machine-Learning/services/daily_dump.py "2017-02-12" 1 teja > /tmp/daily.txt
+cat /tmp/daily.txt | grep -v day > /tmp/daily_devices.txt
+python /home/ubuntu/Energy_Conservation_Machine-Learning/services/algorithms.py /tmp/daily_devices.txt teja> /tmp/daily_devices_analysis.txt
+cat /tmp/daily_devices_analysis.txt  | grep ACTION
+
+kart: "2017-01-01" or 2017-01-03 GOOD ?  - till 2017-01-087
+ubuntu@ip-172-31-41-212:~$ 
+python /home/ubuntu/Energy_Conservation_Machine-Learning/services/daily_dump.py "2017-01-01" 1 kart> /tmp/daily.txt
+cat /tmp/daily.txt | grep -v day > /tmp/daily_devices.txt
+python /home/ubuntu/Energy_Conservation_Machine-Learning/services/algorithms.py /tmp/daily_devices.txt kart> /tmp/daily_devices_analysis.txt
+cat /tmp/daily_devices_analysis.txt  | grep ACTION
+
+ubuntu@ip-172-31-41-212:~$ SIMILARACTION 1155 CC:3D:82:52:73:08 WeMo%20Switch1
+SIMILARACTION 1156 CC:3D:82:52:73:08 WeMo%20Switch1
+SIMILARACTION 1157 CC:3D:82:52:73:08 WeMo%20Switch1
+
+54.212.246.50:8043/
+http://54.212.246.50:8043/static/analysis.html
+
+- do combine to one script (easyly to run script after script)
+- print analysis
+    during interval wemolight1 state correlates to devices .  
+   every minute 
+    70 -> similar device-> wemolight1
+    71  
+    72
+- client actions
+  - if during the interval, check state of devices and turn on/off wemolight1
+
+- 
+
+- client enhancements
+   - start wemo server autmatically
+   - find list of wemos, by wemo status.
+   - issue with belkin switch need to turn off using app or switch only. not the 
 
 Analysis
 ----------
@@ -58,6 +117,7 @@ similarity (Cosine)
 Decision trees
 Naive bases
 K means around transition data? 2 clusters
+Markov Chains
 
 
 
@@ -258,6 +318,16 @@ client:-
 
   cd ~/smart_home_app/client/
 
+For energy:-
+
+while [ 1 ]
+do
+    date
+    curl http://localhost:5000/api/environment
+    sleep 120
+done
+
+# client connection
 sudo bash
 while [ 1 ]
 do
@@ -278,9 +348,11 @@ done
 webserver:
   (with in screen)
   cd ~/Energy_Conservation_Machine-Learning
+  
+   python manage.py runserver 0.0.0.0:8043 >> logs.txt  
   #python manage.py runserver 0.0.0.0:8043
   #nohup python manage.py runserver 0.0.0.0:8043&
-  nohup python manage.py runserver 0.0.0.0:8043 > /dev/null 2>&1 &
+  #nohup python manage.py runserver 0.0.0.0:8043 > /dev/null 2>&1 &
   
 
   logs: 2016-02-07T19:00:00 weekday_hour:weekday6-19hour
@@ -363,6 +435,18 @@ to delete or remove rols
 > db.device_clusters.deleteMany({})
 { "acknowledged" : true, "deletedCount" : 168 }
 > 
+
+14:91:82:C9:61:91 - belkin
+88:1F:A1:1E:E1:60 - apple
+78:4F:43:54:1C:36 - apple
+AC:BC:32:CF:21:3F - apple
+64:BC:0C:67:97:BC - LG
+B8:E8:56:43:49:08 - apple
+6C:B0:CE:38:38:AE- NETGEAR
+CC:3D:82:52:73:08 - Intel
+60:F1:89:7D:93:C3- Murata 
+
+***{"home_id": "kart", "device_visibility": {"14:91:82:C9:61:91": {"56": "1"}, "88:1F:A1:1E:E1:60": {"56": "1"}, "WeMo%20Switch1": {"56": "1"}, "78:4F:43:54:1C:36": {"56": "1"}, "AC:BC:32:CF:21:3F": {"56": "1"}, "64:BC:0C:67:97:BC": {"56": "1"}, "B8:E8:56:43:49:08": {"56": "1"}, "6C:B0:CE:38:38:AE": {"56": "1"}, "192_168_1_17": {"56": "1"}, "CC:3D:82:52:73:08": {"56": "1"}, "60:F1:89:7D:93:C3": {"56": "1"}}, "timestamp_hour": "2017-01-01T19:56:00"}***
 
 learning / services:-
 
@@ -1372,3 +1456,105 @@ The mac field is only populated when the overall program has been run as root.
 
 
 ============
+
+
+
+#
+# Perform action based on past analysis
+# min_of_day
+current_min_from_start_of_day=date_obj.hour*60 + date_obj.minute
+
+if current_min_from_start_of_day%120 ==0: # update past results every 2hrs
+    # call this periodically
+    read_device_analysis()
+
+if current_min_from_start_of_day in action_minute_device_dependant_device_map:
+    device_dependant_device_map = action_minute_device_dependant_device_map[current_min_from_start_of_day]
+    # tejmacairB8:E8:56:43:49:08
+    # Check the current device 
+    # At this minute in the past, see the the visibility of the device. Based on it turn off/on wemo.
+    for past_device in device_dependant_device_map:
+        is_past_device_visible_now=0
+        past_dependency_device = device_dependant_device_map[past_device]
+        for curr_visible_device in json_obj['device_visibility'].keys():
+            if past_device.find(curr_visible_device) != -1:
+                is_past_device_visible_now=1
+
+        if is_past_device_visible_now == 0:
+            response_string[past_dependency_device] = "switch off"
+        else:
+            response_string[past_dependency_device] = "switch on"
+                
+
+
+
+~/smart_home_app/test$ curl -X POST -d @device_stats_post.json "http://localhost:8043/smart_home_app/?"
+
+~/smart_home_app/test$ cat device_stats_post.json
+
+in /tmp/device...
+SIMILARACTION 1179 tejmacairB8:E8:56:43:49:08 tejlightWeMo%20Insight
+SIMILARACTION 1180 tejmacairB8:E8:56:43:49:08 tejlightWeMo%20Insight
+
+# test action: tejmacairB8:E8:56:43:49:08 is off
+{"home_id": "teja", "device_visibility": {"14:91:82:C9:61:91": {"14": "1"}, "C0:56:27:B4:A5:79": {"14": "1"}, "6C:AD:F8:2B:AA:8D": {"14": "1"}, "C0:C1:C0:B2:BE:C4": {"14": "1"}, "64:BC:0C:67:97:BC": {"14": "1"}, "192_168_1_137": {"14": "1"}, "94:94:26:95:12:0B": {"14": "1"}, "AC:BC:32:B4:01:27": {"14": "1"}, "00:BB:3A:11:E7:D5": {"14": "1"}, "00:6B:9E:4A:42:83": {"14": "1"}, "WeMo%20Insight": {"14": "1"}}, "timestamp_hour": "2017-12-30T19:39:00"}
+
+
+#Prime cache just for test
+{"home_id": "teja", "device_visibility": {"14:91:82:C9:61:91": {"14": "1"}, "C0:56:27:B4:A5:79": {"14": "1"}, "6C:AD:F8:2B:AA:8D": {"14": "1"}, "C0:C1:C0:B2:BE:C4": {"14": "1"}, "64:BC:0C:67:97:BC": {"14": "1"}, "192_168_1_137": {"14": "1"}, "94:94:26:95:12:0B": {"14": "1"}, "AC:BC:32:B4:01:27": {"14": "1"}, "00:BB:3A:11:E7:D5": {"14": "1"}, "00:6B:9E:4A:42:83": {"14": "1"}, "WeMo%20Insight": {"14": "1"}}, "timestamp_hour": "2017-12-30T16:00:00"}
+
+
+
+
+========================
+
+python plot graphs
+http://matplotlib.org/gallery.html
+
+http://matplotlib.org/examples/lines_bars_and_markers/marker_fillstyle_reference.html
+
+sudo apt-get install python-matplotlib
+
+http://matplotlib.org/2.0.0b2/examples/lines_bars_and_markers/line_demo_dash_control.html
+
+http://stackoverflow.com/questions/21519203/plotting-a-list-of-x-y-coordinates-in-python-matplotlib
+
+
+
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+#plt.plot([1,2,3])
+x=[10]
+y=[1]
+plt.scatter(x, y)
+
+x=[100]
+y=[1]
+plt.scatter(x, y)
+
+x=[1600]
+y=[5]
+plt.scatter(x, y)
+
+plt.axis([0, 1600, 0, 20]) # xmin, xmax, ymin, ymax
+
+y=[1,5,6]
+ylabels=["a", "b", "c"]
+plt.yticks(y, ylabels)
+plt.xlabel("Time (minute of the day) ")
+plt.savefig('myfig')
+
+
+
+===============================
+
+tunnel
+
+
+in client:
+ssh -o TCPKeepAlive=yes -o ServerAliveInterval=50 -R 44444:localhost:22 -i "tejasvideca.pem.txt" ubuntu@xxxxx  -l ubuntu
+
+login to server 
+ssh -l tejasvi -p 44444 localhost
+========================================
