@@ -1,3 +1,34 @@
+Report
+--------
+
+Daily dump picture (transitions and correlations)
+
+Machine learning auto turn off day
+
+2/16 ok
+2/17 not good data
+2/18 not good
+2/19 ok but phone missing
+2/20 ok but no similarity
+2/21 ok not all mething transitions. (some match)
+2/22 ok not very good matches.
+2/23 ok not good matches.
+2/24 ok not good matches
+2/25 ok not good matches
+2/26 ok not very good match
+2/27 ok few matching 
+2/28 ok good matches (ML applied)
+
+3/1 ok not matching
+3/2 ok matching (ML)
+3/3 no phone, laptop
+3/4 no ph, laptop
+3/5 no. mismath
+3/6 ok, some matching
+3/7 ok. some mathing
+3/8 
+
+
 
 Analysis:-
 ----------
@@ -397,6 +428,46 @@ https://macvendors.com enter three chars to find vendor.
 
 db.device_names.deleteMany({})
 Use sort my MAC:- http://192.168.1.1/DHCPTable.asp
+
+
+For analysis (trnasition points):
+   "WeMo%20Insight":""tejlightWeMo%20Insight",
+
+For graph:
+			    "WeMo%20Insight":"Smartplug AC status",
+
+    db.device_names.insert( {"home_id" : "teja", 
+
+			    "192_168_1_137":"Laptop ML",
+			    "20:16:d8:15:94:66":"Laptop ML",
+			    "6C:AD:F8:2B:AA:8D":"Chromecast",
+			    "C0:C1:C0:B2:BE:C4":"Router",
+			    "192_168_1_1":"Router",
+			    "C0:56:27:B4:A5:79":"Smartplug",
+			    "80:56:F2:59:85:E2":"Disk",
+			    "14:91:82:C9:61:91":"Smartplug Lights Status",
+
+			    "64:BC:0C:67:97:BC":"Phone Self",
+			    "B8:E8:56:43:49:08":"Laptop Self",
+			    "WeMo%20Insight":"tejlight",
+
+			    "94:94:26:95:12:0B":"Phone Father",
+			    "AC:BC:32:B4:01:27":"Laptop Father",
+			    "C8:EB:8B:96:B6:34":"Tablet Father",
+                            "00:6B:9E:4A:42:83":"TV Father",
+
+			    "B8:8D:12:08:6E:98":"Laptop Mother",
+			    "00:BB:3A:11:E7:D5":"Phone Mother",
+			    "5C:F8:A1:6D:B7:EC":"Laptop Mother",
+			    "WeMo%20Switch1":"Smartplug light",
+
+			    "AC:37:43:53:5E:C6":"Phone brother",
+			    "78:4F:43:54:1C:36":"Laptop brother"
+			    }
+			    )
+
+
+Before 3/11
     db.device_names.insert( {"home_id" : "teja", 
 
 			    "192_168_1_137":"allasus",
@@ -1545,6 +1616,9 @@ plt.yticks(y, ylabels)
 plt.xlabel("Time (minute of the day) ")
 plt.savefig('myfig')
 
+
+Image as label?
+http://stackoverflow.com/questions/42155119/replace-matplotlib-legends-labels-with-image
 
 
 ===============================

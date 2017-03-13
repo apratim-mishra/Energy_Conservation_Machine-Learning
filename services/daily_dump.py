@@ -83,7 +83,7 @@ for device in device_visibility_for_day:
 
 
 # do this for web UI Access otherwise . web will not have data.
-sys.exit(0)
+#sys.exit(0)
 
 #
 # plot graph
@@ -91,6 +91,13 @@ sys.exit(0)
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+
+# Get current size
+fig_size = plt.rcParams["figure.figsize"]
+# Set figure width to 12 and height to 9
+fig_size[0] = 12
+fig_size[1] = 9
+plt.rcParams["figure.figsize"] = fig_size
 
 plt.axis([0, max_minute_from_beginning_of_start_date, 0, len(device_visibility_for_day)+1]) # xmin, xmax, ymin, ymax
 
@@ -102,20 +109,26 @@ for device in device_visibility_for_day:
 
     if names is not None:
         if device in names:
-            deviceName =  names[device] + device
+            #deviceName =  names[device] + device
+            deviceName =  names[device]
 
     y_number.append(device_number)
     y_ticks.append(deviceName)
     for min_of_day in range(0,max_minute_from_beginning_of_start_date):
         if device_visibility_for_day[device].get(min_of_day, 0) != 0:
-            plt.scatter(min_of_day, device_number)
+
+# http://matplotlib.org/api/markers_api.html
+            #plt.scatter(min_of_day, device_number)
+            plt.scatter(min_of_day, device_number, marker='.', color='blue', alpha=0.7, s = 10)
             # 
             # print "plt: (" + str(min_of_day) + "," + str(device_number) + ")"
 
     device_number = device_number+1
 
-plt.xlabel("Time (minute of the day) ")
+plt.xlabel("Minute of the day")
+plt.ylabel("Wi-Fi Devices ")
 plt.yticks(y_number, y_ticks)
+plt.xticks([0,60,120,180,240,300,360,420,480,540,600,660,720,780,840,900,960,1020,1080,1140, 1200,1260,1320,1380,1440], fontsize = 20)
 # We change the fontsize of minor ticks label 
 #plt.rcParams['ytick.labelsize'] = 8
 #plt.tick_params(axis='both', which='minor', labelsize=8)
@@ -124,10 +137,13 @@ plt.tick_params(axis='both', which='major', labelsize=8)
 plt.tick_params(axis='both', which='minor', labelsize=6)
 
 #This makes the figure's width  inches, and its height  inches.
-plt.rcParams['figure.figsize'] = 40, 10
+#plt.rcParams['figure.figsize'] = 40, 10
+#plt.rcParams['figure.figsize'] = 100, 100
 # adjust margins NOT WORKING
 #plt.subplots_adjust(left=100, bottom=0, right=101, top=1, wspace=0, hspace=0)
 # Tweak spacing to prevent clipping of tick-labels
+
+
 plt.subplots_adjust(left=0.25)
 
 #plt.savefig('/tmp/daily')
