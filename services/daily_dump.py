@@ -83,7 +83,7 @@ for device in device_visibility_for_day:
 
 
 # do this for web UI Access otherwise . web will not have data.
-#sys.exit(0)
+# sys.exit(0)
 
 #
 # plot graph

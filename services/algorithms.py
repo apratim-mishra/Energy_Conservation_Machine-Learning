@@ -195,8 +195,7 @@ for device in device_interval_visibility:
 
 
 
-
-# CHANGE 
+# #CHANGE 
 # For teja
 if home_id == "kart":
     # For kart
