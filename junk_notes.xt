@@ -5,7 +5,7 @@ Daily dump picture (transitions and correlations)
 
 Machine learning auto turn off day
 
-2/16 ok
+2/16 ok <-- took daily dump pic
 2/17 not good data
 2/18 not good
 2/19 ok but phone missing
@@ -20,7 +20,19 @@ Machine learning auto turn off day
 2/28 ok good matches (ML applied)
 
 3/1 ok not matching
-3/2 ok matching (ML)
+3/2 ok matching (ML) <-- took ML turn off pic
+    7:40 off auto (after I left for school)
+{"home_id": "teja", "device_visibility": {"C0:56:27:B4:A5:79": {"40": "1"}, "6C:AD:F8:2B:AA:8D": {"40": "1"}, "C0:C1:C0:B2:BE:C4": {"40": "1"}, "192_168_1_137": {"40": "1"}, "80:56:F2:59:85:E2": {"40": "\1"}, "00:BB:3A:11:E7:D5": {"40": "1"}, "WeMo%20Insight": {"40": "1"}}, "timestamp_hour": "2017-03-02T07:40:00"}
+2017-03-02 07:40:00   WeMo%20Insight  devices  ['64:BC:0C:67:97:BC', 'B8:E8:56:43:49:08']  are not visible for more than 15 mins. turning off now
+wemo switch "WeMo Insight" off
+new wemo current state:WeMo%20Insight:0
+
+{"home_id": "teja", "device_visibility": {"C0:56:27:B4:A5:79": {"0": "1"}, "6C:AD:F8:2B:AA:8D": {"0": "1"}, "C0:C1:C0:B2:BE:C4": {"0": "1"}, "192_168_1_137": {"0": "1"}, "94:94:26:95:12:0B": {"0": "1"}, \
+"00:BB:3A:11:E7:D5": {"0": "1"}}, "timestamp_hour": "2017-03-02T17:00:00"}
+2017-03-02 17:00:00   WeMo%20Insight  devices  ['64:BC:0C:67:97:BC', 'B8:E8:56:43:49:08']  are not visible for more than 15 mins. turning off now
+wemo switch "WeMo Insight" off
+
+
 3/3 no phone, laptop
 3/4 no ph, laptop
 3/5 Take no. mismath
@@ -431,10 +443,11 @@ Use sort my MAC:- http://192.168.1.1/DHCPTable.asp
 
 
 For analysis (trnasition points):
-   "WeMo%20Insight":""tejlightWeMo%20Insight",
+
+			    "WeMo%20Insight":"tejlight",
 
 For graph:
-			    "WeMo%20Insight":"Smartplug AC status",
+			    "WeMo%20Insight":"Smartplug AC",
 
     db.device_names.insert( {"home_id" : "teja", 
 
@@ -449,7 +462,7 @@ For graph:
 
 			    "64:BC:0C:67:97:BC":"Phone Self",
 			    "B8:E8:56:43:49:08":"Laptop Self",
-			    "WeMo%20Insight":"tejlight",
+                            "WeMo%20Insight":"tejlight",
 
 			    "94:94:26:95:12:0B":"Phone Father",
 			    "AC:BC:32:B4:01:27":"Laptop Father",

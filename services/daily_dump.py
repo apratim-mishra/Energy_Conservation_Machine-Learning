@@ -89,8 +89,15 @@ for device in device_visibility_for_day:
 # plot graph
 #
 import matplotlib
+#from matplotlib import rc,rcParams
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+
+# activate latex text rendering
+#rc('text', usetex=True)
+#rc('axes', linewidth=2)
+#rc('font', weight='bold')
 
 # Get current size
 fig_size = plt.rcParams["figure.figsize"]
@@ -98,6 +105,25 @@ fig_size = plt.rcParams["figure.figsize"]
 fig_size[0] = 12
 fig_size[1] = 9
 plt.rcParams["figure.figsize"] = fig_size
+plt.rcParams['axes.labelsize'] = 'x-large'
+plt.rc('font', weight='bold')
+plt.rc('axes', linewidth=2)  
+plt.rc('xtick', labelsize=20)
+plt.rc('ytick', labelsize=18)
+plt.rcParams['ytick.color'] = 'black'
+plt.rcParams['xtick.color'] = 'black'
+
+
+
+
+#plt.rc('grid', c='0.5', ls='-', lw=5)
+#plt.grid(True)
+plt.rc('lines', lw=2, color='g')
+plt.rc('savefig', dpi=300)  # higher res outputs
+
+
+
+#plt.rcParams['text.latex.preamble'] = [r'\usepackage{sfmath} \boldmath']
 
 plt.axis([0, max_minute_from_beginning_of_start_date, 0, len(device_visibility_for_day)+1]) # xmin, xmax, ymin, ymax
 
@@ -119,22 +145,35 @@ for device in device_visibility_for_day:
 
 # http://matplotlib.org/api/markers_api.html
             #plt.scatter(min_of_day, device_number)
-            plt.scatter(min_of_day, device_number, marker='.', color='blue', alpha=0.7, s = 10)
+            plt.scatter(min_of_day, device_number, marker='.', color='blue', alpha=0.7, s = 20)
             # 
             # print "plt: (" + str(min_of_day) + "," + str(device_number) + ")"
 
     device_number = device_number+1
 
-plt.xlabel("Minute of the day")
-plt.ylabel("Wi-Fi Devices ")
+font = {'family': 'serif',
+        'color':  'darkred',
+        'weight': 'normal',
+        'size': 36,
+        }
+
+plt.xlabel("Minute of the day", fontdict=font)
+plt.ylabel("Wi-Fi Devices ", fontdict=font)
 plt.yticks(y_number, y_ticks)
-plt.xticks([0,60,120,180,240,300,360,420,480,540,600,660,720,780,840,900,960,1020,1080,1140, 1200,1260,1320,1380,1440], fontsize = 20)
+#plt.xticks([0,60,120,180,240,300,360,420,480,540,600,660,720,780,840,900,960,1020,1080,1140, 1200,1260,1320,1380,1440], fontsize = 20)
+#plt.xticks([0,120,240,360,480,600,720,840,960,1080, 1200,1320,1440], fontsize = 16)
+#plt.xticks([0,120,240,360,480,600,720,840,960,1080, 1200,1320,1440])
+
+# very good to see all properties.
+# for param, value in plt.rcParams.items():
+#     print param, value
+
 # We change the fontsize of minor ticks label 
 #plt.rcParams['ytick.labelsize'] = 8
 #plt.tick_params(axis='both', which='minor', labelsize=8)
 # We change the fontsize of minor ticks label 
-plt.tick_params(axis='both', which='major', labelsize=8)
-plt.tick_params(axis='both', which='minor', labelsize=6)
+#plt.tick_params(axis='both', which='major', labelsize=20)
+#plt.tick_params(axis='both', which='minor', labelsize=20)
 
 #This makes the figure's width  inches, and its height  inches.
 #plt.rcParams['figure.figsize'] = 40, 10
@@ -145,6 +184,7 @@ plt.tick_params(axis='both', which='minor', labelsize=6)
 
 
 plt.subplots_adjust(left=0.25)
+
 
 #plt.savefig('/tmp/daily')
 plt.savefig('/home/ubuntu/Energy_Conservation_Machine-Learning/smart_home_app/static/daily')
