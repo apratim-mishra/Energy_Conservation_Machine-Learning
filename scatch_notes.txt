@@ -1645,3 +1645,18 @@ ssh -o TCPKeepAlive=yes -o ServerAliveInterval=50 -R 44444:localhost:22 -i "teja
 login to server 
 ssh -l tejasvi -p 44444 localhost
 ========================================
+
+def set_device_clusters(s, kmeans_model):
+    # import rpdb; rpdb.set_trace()
+    s['device_clusters'] = {}
+    for (device_num, minute_values) in s['device_visibility_by_minute'].iteritems():
+        s['device_clusters'][str(device_num)] = kmeans_model.predict(minute_values)
+
+    return s
+
+
+            # You can pass additional parameters to flatMap/map function:
+            rdd_with_device_clusters = rdd_to_cluster.map(lambda s: set_device_clusters(s, optimal_model))
+
+
+==================
