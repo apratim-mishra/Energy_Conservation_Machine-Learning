@@ -1,10 +1,9 @@
 """
-Program to collect visible devices on the home network. Run as follows:
+Program to collect visible Wi-Fi and electronic devices on the home network.
+Run this program on ASUS server command prompt with following command:
 $ python client_home.py teja
 
 By Tejasvi Kothapalli 
-
-
 
 """
 
@@ -21,15 +20,16 @@ import time
 
 def getNetworkAddress(interface):
     """
-    Returns home network address
+    Returns home network router address. Run following command prompt command to get information:
     $ ifconfig wlan0
     wlan0     Link encap:Ethernet  HWaddr 20:16:d8:15:94:66  
               inet addr:192.168.1.137  Bcast:192.168.1.255  Mask:255.255.255.0
               inet6 addr: fe80::2216:d8ff:fe15:9466/64 Scope:Link
+    In the information above "address:192.168.1.137" is needed
     """
     cmd="ifconfig   " + interface
     network_address = ""
-    ifconfig_out= subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
+    ifconfig_out= subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read() #running cmd command throught python
     for line in ifconfig_out.splitlines():
         if 'inet addr:' in line:
             network_address =line.split(":")[1].split()[0]
@@ -39,7 +39,7 @@ def getNetworkAddress(interface):
 
 def getWemoStatusMap():
     """
-    Returns  the status of the wemo devices by running "wemo status" 
+    Returns the status of the wemo devices by running "wemo status" 
     """
     cmd = "wemo status"
     wemo_status_output=subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
@@ -71,12 +71,13 @@ def wemoChangePower(wemo_name, power_state):
     wemo_status_output=subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
     print cmd, wemo_status_output
 
+
+# THIS IS THE MAIN!!!!! -------------------------MAIN------------------------
 if len(sys.argv) != 2:
 	print "You need two arguements (ie. " + sys.argv[0] + " teja)"    
 	sys.exit()
 
 home_id = sys.argv[1]
-#home_id = "teja"
 
 network_interface="wlan0"
 print getNetworkAddress(network_interface)
@@ -85,15 +86,16 @@ print getNetworkAddress(network_interface)
 network_addr_to_scan = getNetworkAddress(network_interface)
 
 # URLof the AWS
-url = "http://54.212.246.50:8043/smart_home_app/?" #?
+url = "http://54.212.246.50:8043/smart_home_app/?" # To connect to AWS
 
 
-# 
 # Turn OFF smartplug AC with Phone and Laptop are not visible
-#
+# This is the part that I wish to improve in the future. Although currently analysis.py did not properly serve its purpose, I myself 
+# had to analyze the results of the program and hard code it into this program.
 wemo_controller_device_similarity = { "WeMo%20Insight" : ["64:BC:0C:67:97:BC", "B8:E8:56:43:49:08"] }
 
-wemo_controller_device_similarity_last_visible_time = { }
+wemo_controller_device_similarity_last_visible_time = { } #Keeps track of when 64:BC:0C:67:97:BC and B8:E8:56:43:49:08 are last ON.
+								# ie. {64:BC:0C:67:97:BC : timestamp, B8:E8:56:43:49:08 : timestamp}
 
 for wemo in wemo_controller_device_similarity:
     wemo_controller_device_similarity_last_visible_time[wemo] = datetime.datetime(2000, 1, 1)
@@ -104,14 +106,10 @@ last_power_off_time = datetime.datetime(2000, 1, 1)
 prev_day_of_month=0
 curr_day_of_month=0
 
-#
-# loop every 30 seconds.
-#
 
-#for count in range(1, 100000):
 while True:
 
-    time.sleep(30)
+    time.sleep(30) # loop every 30 seconds.
 
     #
     # random number to decide if today we can turn off the wemo (ie., apply Machine learning or not)
@@ -130,7 +128,6 @@ while True:
 
 
     # Use fping 
-    # apt-get install fping
     import subprocess
     cmd =  "fping -q -a -A -c1 -t500 -g " + network_addr_to_scan
     fping_out= subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE).stderr.read()
@@ -139,12 +136,16 @@ while True:
     for line in fping_out.splitlines():
         # fping -q -a -A -c1 -t500 -g "192.168.1.0/24" 
         # 192.168.1.103 : xmt/rcv/%loss = 1/1/0%, min/avg/max = 4.30/4.30/4.30
-        # 192.168.1.104 : xmt/rcv/%loss = 1/0/100%
+        # 192.168.1.104 : xmt/rcv/%loss = 1/0/100%  ...........
         if 'min/avg/max' in line:
-            #print line
+            #print line # debugging
             #print line.split()[0]
             ips_alive.append(line.split()[0])
 
+
+    #
+    # ARP process to fix IP downfall
+    #
     ip_mac_map = {}
     arp_out= subprocess.Popen("arp -n", shell=True, stdout=subprocess.PIPE).stdout.read()
     for line in arp_out.splitlines():
@@ -157,7 +158,7 @@ while True:
         ip_mac_map[curr_ip] = curr_mac
         #print curr_ip + " " + curr_mac
 
-    macs_alive = []
+    macs_alive = [] #list
     for ip in ips_alive:
         default_value = ip
         mac_alive = ip_mac_map.get(ip, default_value)
@@ -172,17 +173,21 @@ while True:
     hour = curr_time.hour
     minute = curr_time.minute
     curr_time = curr_time.replace(hour=hour, minute=minute, second=0, microsecond=0)
+    
     minute_value_map = {}
     home_doc_map = {}
     device_visibility_doc_map = {}
-    # device_visibility_doc_map:-
-    # "device_visibility": {"192_168_1_118": {"52": "1"}, "192_168_1_119": {"52": "1"}, "192_168_1_137": {"52": "1"}, "192_168_1_126": {"52": "1"}, "192_168_1_1": {"52": "1"}, "192_168_1_145": {"52": "1"}}
+    
+#{"home_id": "teja", "device_visibility": {"C0:56:27:B4:A5:79": {"37": "1"}, "B8:8D:12:08:6E:98": {"37": "1"}, 
+#"6C:AD:F8:2B:AA:8D": {"37": "1"}, "C0:C1:C0:B2:BE:C4": {"37": "1"}, "B8:E8:56:43:49:08": {"37": "1"}, "192_168_1_137": {"37": "1"}, 
+#"AC:BC:32:B4:01:27": {"37": "1"}, "00:BB:3A:11:E7:D5": {"37": "1"}, 
+#"WeMo%20Insight": {"37": "1"}}, "timestamp_hour": "2017-02-18T15:37:00"}
+
     for device in visible_hosts:
         minute_value_map[minute] = "1"
         # convert . to _ in the ip address
         # 
         formatted_device = device.replace(".", "_")
-        #device_visibility_doc_map[device] = minute_value_map
         device_visibility_doc_map[formatted_device] = minute_value_map
 
         home_doc_map["home_id"] = home_id
@@ -201,25 +206,20 @@ while True:
             
 
     # send the information to a server
-    home_doc_json = json.dumps(home_doc_map)
+    home_doc_json = json.dumps(home_doc_map)# Device visibility map is converted to json string format
     print(home_doc_json)
     if len(device_visibility_doc_map) > 0:
-        # test = 1
         # we have some device visible, so post it to the server.
-        resp = requests.post(url, data=home_doc_json, headers={'Connection':'close'})
+        resp = requests.post(url, data=home_doc_json, headers={'Connection':'close'}) # sending to AWS URL, data accepted by views.py
         if resp.status_code != 201 and resp.status_code != 200:
             print (resp.status_code), resp.content
             print "Getting errors: Existing"
             sys.exit()
-            pass
-            #raise ApiError('POST /tasks/ {}'.format(resp.status_code))
-            # print('Created task. ID: {}'.format(resp.json()["id"]))
 
         # Check if we can turn off the wemo
         # tejpho and tejmac similar to wemo insight
         # fill the last time the devices are visible (similar devices corresponding to wemo)
         # "WeMo%20Insight" -> Feb 19, 2017 6:00 pm
-        # "WeMo%20Insight1" -> Feb 19, 2017 6:01 pm
         for wemo in wemo_controller_device_similarity:
              similar_devices = wemo_controller_device_similarity[wemo]
              for similar_device in similar_devices:
@@ -237,3 +237,4 @@ while True:
                 wemoChangePower(wemo, "off")
                 last_power_off_time = datetime.datetime.now()
 
+# THIS IS THE END OF MAIN!!!!! -------------------------MAIN------------------------
