@@ -107,6 +107,8 @@ def writeCosine(filename, dictionary, wemo):
     arr.sort(reverse=True, key=lambda x : x[0])    
     return arr
 
+
+# ---------------------------------MAIN-----------------------MAIN------
 if len(sys.argv) != 3:
     print "Usage:" + sys.argv[0]  + " input_file"  + " home_id"
 
