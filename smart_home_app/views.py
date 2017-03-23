@@ -1,3 +1,9 @@
+"""
+Web file that takes device status and puts in Mongo
+By Tejasvi Kothapalli
+
+"""
+
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
 from rest_framework.decorators import api_view
@@ -13,6 +19,10 @@ from django.http import JsonResponse
 action_minute_device_dependant_device_map={}
 
 def read_device_analysis():
+    """
+    Reads the machine learning analysis from file "/tmp/daily_devices_analysis.txt"
+
+    """
     device_analysis_file = "/tmp/daily_devices_analysis.txt"
     global action_minute_device_dependant_device_map
     action_minute_device_dependant_device_map = {}
@@ -43,6 +53,10 @@ def read_device_analysis():
 
     f.close()
 
+"""
+List of web methods
+
+"""
 #@csrf_exempt
 @api_view(['GET', 'POST'])
 def smart_home_api(request):
@@ -52,20 +66,17 @@ def smart_home_api(request):
     dbconn = db.home_automation  # should be database name
     device_stats_collection = dbconn['device_stats']  # collection in DB
 
-        
-
-
+    """ Run K-means cluster algorithm (code not working) """
     if request.method == 'GET' and request.GET['op'] == 'compute_clusters':
         day=request.GET['day'] # eg., "2016-08-20"
 	home_id = "teja"
-        #cmd = "/home/ubuntu/spark-1.5.2-bin-hadoop2.6/bin/pyspark --executor-memory 100M --jars /home/ubuntu/Energy_Conservation_Machine-Learning/spark-mongo-libs/mongo-hadoop-core-1.4.2.jar,/home/ubuntu/Energy_Conservation_Machine-Learning/spark-mongo-libs/mongo-java-driver-2.13.2.jar  /home/ubuntu//Energy_Conservation_Machine-Learning/services/cluster-home-devices-by-day.py " + day
         cmd = "/home/ubuntu/spark-1.5.2-bin-hadoop2.6/bin/pyspark --executor-memory 100M --jars /home/ubuntu/Energy_Conservation_Machine-Learning/spark-mongo-libs/mongo-hadoop-core-1.4.2.jar,/home/ubuntu/Energy_Conservation_Machine-Learning/spark-mongo-libs/mongo-java-driver-2.13.2.jar  /home/ubuntu//Energy_Conservation_Machine-Learning/services/cluster-home-devices-by-day.py " + day
 
         print cmd
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()
-        #p.wait(timeout=3000)
         return Response(p)        
 
+    """ Display the hourly device status  """
     if request.method == 'GET' and request.GET['op'] == 'hourly_data':
         # For every one should the visitbility data
         # Eg., db.device_clusters.find({"timestamp_hour":"2016-07-01T22:00:00", "home_id":"teja"},{"device_visibility_by_minute":1,"_id":0 } ).pretty()
@@ -114,9 +125,8 @@ def smart_home_api(request):
                         tmp_out = tmp_out +  " " + deviceName
                 out = out + tmp_out + "<br/>"
 
-            # now find the device visitibility for the hour (for every minute)
+            # now find the device visibility for the hour (for every minute)
             cursor = dbconn.device_clusters.find({"timestamp_hour": hour, "home_id" : home_id }, {"device_visibility_by_minute":1,"_id":0 } )
-
 
             out =  out + "<table border=0>"
 
@@ -141,11 +151,10 @@ def smart_home_api(request):
                         out = out + "<td>" + str(minute_visibility) + "</td>"
                 out = out + "</tr>"
 
-
             out =  out + "</table>"
-            #print out
         return Response(out)
 
+    """ Display the daily device status  """
     if request.method == 'GET' and request.GET['op'] == 'daily_dump':
         print >> sys.stderr,  "daily_dump STARTED"
         day=request.GET['day'] # eg., "2016-08-20"
@@ -161,8 +170,6 @@ def smart_home_api(request):
         cmd = "python /home/ubuntu/Energy_Conservation_Machine-Learning/services/daily_dump.py " + day + " " + total_days +  " " + home_id +  " | sort > /tmp/daily.txt" 
         print "cmd:" + cmd
         print >> sys.stderr,  cmd
-        # p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).communicate()
-        # return Response(p)        
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
         out=p.stdout.read()
 
@@ -183,12 +190,10 @@ def smart_home_api(request):
 
         result = result +  "</table>"
 
-        #print result
-
-        #return HttpResponse(result, content_type='text/plain')
         print >> sys.stderr,  "daily_dump COMPLETED"
         return Response(result)
 
+    """ Display the cosine similarity of the devices  """
     if request.method == 'GET' and request.GET['op'] == 'analysis_cosine':
         print >> sys.stderr,  "analysis_cosine STARTED"
         day=request.GET['day'] # eg., "2016-08-20"
@@ -211,21 +216,18 @@ def smart_home_api(request):
         return Response(result)
 
 
+    """ Display the K-means cluster graph """
     if request.method == 'GET' and request.GET['op'] == 'graph':
 
-# returns data in this format:-
-# {"cols":[{"type":"string","id":"IP_Address"},{"type":"date","id":"Start"},{"type":"date","id":"End"}],"rows":[
-# {"c":[{"v":"192_168_1_107"},{"v":"Date(2016,06,13,00,12,0)"},{"v":"Date(2016,06,13,00,12,0)"}]},
-# {"c":[{"v":"192_168_1_107"},{"v":"Date(2016,06,13,00,28,0)"},{"v":"Date(2016,06,13,00,28,0)"}]},
-# {"c":[{"v":"192_168_1_107"},{"v":"Date(2016,06,13,00,39,0)"},{"v":"Date(2016,06,13,00,39,0)"}]},
-# ]}
+        """
+        Returns data in this format:-
+        {"cols":[{"type":"string","id":"IP_Address"},{"type":"date","id":"Start"},{"type":"date","id":"End"}],"rows":[
+        {"c":[{"v":"192_168_1_107"},{"v":"Date(2016,06,13,00,12,0)"},{"v":"Date(2016,06,13,00,12,0)"}]},
+        {"c":[{"v":"192_168_1_107"},{"v":"Date(2016,06,13,00,28,0)"},{"v":"Date(2016,06,13,00,28,0)"}]},
+        {"c":[{"v":"192_168_1_107"},{"v":"Date(2016,06,13,00,39,0)"},{"v":"Date(2016,06,13,00,39,0)"}]},
+        ]}
+        """
 
-        # from 2016-06-25 - 2016-07-02
-        # "2016-06-28", "2016-06-27", "2016-06-26", 06-29, 06-30, 07-01, 07-02
-         
-        #day = "2016-07-01"
-        #day = "2016-06-28"
-        #day = "2016-08-20"
         day=request.GET['day'] # eg., "2016-08-20"
         hour_input=request.GET['hour'] # eg., "all" or 0 or 1 ... 23
 	home_id = "teja"
@@ -239,7 +241,6 @@ def smart_home_api(request):
             cursor = dbconn.device_stats.find({"timestamp_hour": hour, "home_id" : home_id }).sort([("timestamp_hour", pymongo.ASCENDING)])
 
         names = dbconn.device_names.find_one({"home_id" : home_id})
-#cursor = dbconn.device_stats.find({"timestamp_hour" : "2016-06-10T22:00:00"})
         output = ""
         output += '{"cols":[{"type":"string","id":"IP_Address"},{"type":"string","id":"Cluster_Name"},{"type":"date","id":"Start"},{"type":"date","id":"End"}], \n "rows":['
 
@@ -292,29 +293,17 @@ def smart_home_api(request):
             print output
         return JsonResponse(json_obj)
 
+    """ Insert the Device status sent by client_home.py in the MongoDB  """
     if request.method == 'POST':
         json_str = (request.body.decode('utf-8'))
         print "***" + json_str + "***"
         json_obj = json.loads(json_str)
 
-        # import pdb; pdb.set_trace()        
-        # deviceStatsCollection.insert(json_obj)
-        # {"home_id" : "home1id",
-        #  "timestamp_hour": "2015-10-10T23:00:00.000Z",
-        #  "device_visibility": {
-        #      "d1": {"0":1, "1":1},
-        #      "d2": {"0":1, "1":0},
-        #      "d3": {"0":0, "1":1}
-        #  }
-        # }
-
-        # import pdb; pdb.set_trace()
         # convert to upsert
         home_id = json_obj['home_id']
         timestamp_hour = json_obj['timestamp_hour']
         print(timestamp_hour)
         # round to hour (strip off minute, second, micro second)
-        #
         try:
             date_obj = datetime.datetime.strptime(timestamp_hour,
                                                   "%Y-%m-%dT%H:%M:%S.%fZ")
@@ -343,30 +332,6 @@ def smart_home_api(request):
                                      {"$set": device_visibility_upsert_set},
                                      upsert=True)
 
-        # Turn off using K-means cluster
-        # import pdb; pdb.set_trace() 
-        # import rpdb; rpdb.set_trace()
-        # device_clusters_collection = dbconn['device_clusters']  # collection in DB
-        # device_custers_obj = device_clusters_collection.find_one({"weekday_hour" : weekday_hour})
-        # if device_custers_obj is not None:
-        #     response_string = {"ok": "true"}
-        #     # check if the device is on the old training data at the same minute
-        #     for device in json_obj['device_visibility'].keys():
-        #         for minute in json_obj['device_visibility'][device].keys():
-
-        #             if device in  device_custers_obj['device_visibility_by_minute']:
-        #                 # import rpdb; rpdb.set_trace()
-        #                 int_minute = int(minute)
-        #                 device_minute_value = device_visibility[device][minute]
-        #                 past_device_minute_value = device_custers_obj['device_visibility_by_minute'][device][int_minute] ## BUG if int_minute is 60 ??? 59 ??
-        #                 if int(device_minute_value) == 1 and past_device_minute_value == 0:
-        #                     response_string[str(device)] = "switch off"
-
-        #     return Response(response_string)
-
-        #
-        # Perform action based on past analysis
-        # min_of_day
         current_min_from_start_of_day=date_obj.hour*60 + date_obj.minute
 
         if current_min_from_start_of_day%120 ==0: # update past results every 2hrs
@@ -398,7 +363,3 @@ def smart_home_api(request):
 
         return Response({"ok": "true"})
 
-        # see http://api.mongodb.org/python/current/tutorial.html
-        # deviceStatsCollection.insert({"home_id" : 1234, "address": 1235})
-        # post_id = deviceStatsCollection.insert(json_obj).inserted_id
-        # print "***" + post_id + "***"
